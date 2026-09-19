@@ -1,0 +1,9 @@
+{
+  "name": "locatelli-catalog",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Locatelli product catalog + AI product-advisor chat backend",
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
