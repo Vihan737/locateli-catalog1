@@ -18,16 +18,16 @@ const SYSTEM_PROMPT = "تو «مشاور محصولات لوکاتلی» هست�
 // ---------------------------------------------------------------- config ----
 const MAX_TURNS = 12;
 const MAX_TEXT_BYTES = 4000;
-const MAX_OUTPUT_TOKENS = 700;
+const MAX_OUTPUT_TOKENS = 1200;
 
 const uniq = (arr) => [...new Set(arr.filter(Boolean))];
 
 const GEMINI_MODELS = uniq([
   process.env.GEMINI_MODEL,
+  'gemini-3.6-flash',
+  'gemini-flash-latest',
   'gemini-2.5-flash',
   'gemini-2.0-flash',
-  'gemini-flash-latest',
-  'gemini-1.5-flash',
 ]);
 const GROQ_MODELS = uniq([
   process.env.GROQ_MODEL,
@@ -104,8 +104,7 @@ function rateLimited(ip) {
 }
 
 // ------------------------------------------------------------- providers ----
-async function callGemini(model, turns, opts) {
-  const o = opts || {};
+async function geminiRequest(model, turns, system, maxTokens, extraConfig) {
   const url =
     'https://generativelanguage.googleapis.com/v1beta/models/' +
     encodeURIComponent(model) +
@@ -117,15 +116,15 @@ async function callGemini(model, turns, opts) {
       'x-goog-api-key': process.env.GEMINI_API_KEY,
     },
     body: JSON.stringify({
-      system_instruction: { parts: [{ text: o.system || SYSTEM_PROMPT }] },
+      system_instruction: { parts: [{ text: system }] },
       contents: turns.map((t) => ({
         role: t.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: t.content }],
       })),
-      generationConfig: {
-        maxOutputTokens: o.maxTokens || MAX_OUTPUT_TOKENS,
-        temperature: 0.7,
-      },
+      generationConfig: Object.assign(
+        { maxOutputTokens: maxTokens, temperature: 0.7 },
+        extraConfig || {}
+      ),
     }),
   });
   const data = await r.json().catch(() => null);
@@ -140,6 +139,27 @@ async function callGemini(model, turns, opts) {
     throw new UpstreamError(502, 'empty reply (' + ((cand && cand.finishReason) || 'unknown') + ')');
   }
   return text;
+}
+
+// The current Gemini models spend part of the token budget on internal
+// "thinking" before they write anything, which can swallow a short answer
+// entirely. So: ask for no thinking first; if the model rejects that option or
+// still runs out of room, retry once with a much larger budget.
+async function callGemini(model, turns, opts) {
+  const o = opts || {};
+  const system = o.system || SYSTEM_PROMPT;
+  const budget = o.maxTokens || MAX_OUTPUT_TOKENS;
+  try {
+    return await geminiRequest(model, turns, system, budget, {
+      thinkingConfig: { thinkingBudget: 0 },
+    });
+  } catch (err) {
+    const msg = String((err && err.message) || '').toLowerCase();
+    const optionRejected = err && err.status === 400;
+    const ranOutOfRoom = msg.indexOf('max_tokens') !== -1;
+    if (!optionRejected && !ranOutOfRoom) throw err;
+    return await geminiRequest(model, turns, system, Math.max(budget, 4096), {});
+  }
 }
 
 async function callOpenAICompatible(cfg, model, turns, opts) {
@@ -242,7 +262,7 @@ async function runDiagnostics() {
     attempts: [],
   };
   const probe = [{ role: 'user', content: 'سلام' }];
-  const opts = { system: 'فقط بنویس: سلام', maxTokens: 16 };
+  const opts = { system: 'فقط بنویس: سلام', maxTokens: 256 };
   for (const a of buildAttempts()) {
     try {
       const text = await a.run(probe, opts);
@@ -273,7 +293,35 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === 'GET') {
-    const wantsDiag = String(req.url || '').indexOf('diag') !== -1;
+    const url = String(req.url || '');
+
+    // /api/chat?models=1 — the authoritative list for this key
+    if (url.indexOf('models') !== -1) {
+      if (!process.env.GEMINI_API_KEY) {
+        sendJson(res, 200, { ok: false, error: 'GEMINI_API_KEY is not set' });
+        return;
+      }
+      try {
+        const r = await fetch(
+          'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200',
+          { headers: { 'x-goog-api-key': process.env.GEMINI_API_KEY } }
+        );
+        const d = await r.json().catch(() => null);
+        sendJson(res, 200, {
+          ok: r.ok,
+          status: r.status,
+          usable: ((d && d.models) || [])
+            .filter((m) => (m.supportedGenerationMethods || []).indexOf('generateContent') !== -1)
+            .map((m) => String(m.name).replace('models/', '')),
+          error: d && d.error ? redact(d.error.message) : undefined,
+        });
+      } catch (e) {
+        sendJson(res, 200, { ok: false, error: redact(e && e.message) });
+      }
+      return;
+    }
+
+    const wantsDiag = url.indexOf('diag') !== -1;
     if (!wantsDiag) {
       sendJson(res, 200, {
         ok: true,
