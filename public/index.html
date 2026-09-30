@@ -1883,6 +1883,36 @@
   html.sa .sa-scrim{ display:block; position:absolute; left:0; right:0; top:0; height:calc(var(--sat) + 56px); z-index:75;
     pointer-events:none; background:linear-gradient(180deg, rgba(12,34,51,.44) 0%, rgba(12,34,51,.26) 42%, rgba(12,34,51,.09) 72%, rgba(12,34,51,0) 100%); }
 
+  /* ===== v141: "install as an app" — cover button + sheet (shown only on the catalogue's own site) ===== */
+  .cover-install{ display:none; align-items:center; gap:8px; margin-top:-6px; padding:9px 18px; border-radius:22px; cursor:pointer;
+    font-family:'Vazirmatn',sans-serif; font-size:13px; font-weight:600; color:#e9d39f; background:rgba(201,163,92,.14);
+    border:1px solid rgba(228,205,151,.5); }
+  .cover-install svg{ width:18px; height:18px; }
+  html.can-install .cover-install{ display:inline-flex; }
+  .app-sheet{ text-align:right; }
+  .app-head{ display:flex; align-items:center; gap:14px; margin:2px 0 14px; }
+  .app-icon{ width:62px; height:62px; border-radius:15px; flex-shrink:0; box-shadow:0 6px 16px -6px rgba(12,34,51,.45); }
+  .app-title{ font-size:16.5px; font-weight:800; color:var(--navy-deep); line-height:1.5; }
+  .app-sub{ font-size:13px; color:var(--teal); line-height:1.8; margin-top:2px; }
+  .app-perks{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 14px; }
+  .app-perks span{ font-size:11.5px; font-weight:600; color:#8c6a2b; background:rgba(201,163,92,.12); border:1px solid rgba(201,163,92,.35);
+    padding:5px 10px; border-radius:14px; }
+  .app-steps{ background:#fff; border:1px solid rgba(201,163,92,.35); border-radius:12px; padding:6px 14px; margin-bottom:4px; }
+  .app-step{ display:flex; align-items:center; gap:10px; font-size:14px; color:var(--navy-deep); padding:9px 0; line-height:1.7; }
+  .app-step + .app-step{ border-top:1px solid rgba(12,34,51,.07); }
+  .app-step .n{ width:24px; height:24px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:12.5px; font-weight:700; color:#0c2233; background:linear-gradient(135deg,#e9d39f,#c9a35c); }
+  .app-step .ic{ display:inline-flex; vertical-align:middle; margin:0 3px; color:#1677f2; }
+  .app-step .ic svg{ width:19px; height:19px; }
+  .app-step em{ font-style:normal; font-weight:700; }
+  .app-go{ display:flex; align-items:center; justify-content:center; gap:8px; width:100%; height:52px; border:none; border-radius:12px; cursor:pointer;
+    font-family:inherit; font-size:15.5px; font-weight:800; color:#0c2233; text-decoration:none;
+    background:linear-gradient(135deg,#e9d39f,#c9a35c 60%,#b08a47); box-shadow:0 8px 18px -10px rgba(150,110,40,.8); }
+  .app-go svg{ width:20px; height:20px; }
+  .app-note{ font-size:12px; color:rgba(12,34,51,.6); line-height:1.8; margin:10px 2px 0; }
+  html.phone .app-sheet .share-cancel{ margin-top:10px; }
+  html.sa #appOv .share-sheet{ padding-bottom:calc(24px + var(--sab)); }
+
   /* v139: product pages a little more compact on phones (same fonts), so the photo gets the room */
   html.phone .detail-body{ padding:28px 30px 80px; }
   html.phone .spec-table td{ padding-top:11px; padding-bottom:11px; }
@@ -1939,6 +1969,22 @@
       </div>
       <textarea class="share-link ext-text" id="extCopy" readonly rows="3" dir="rtl" onclick="this.select()"></textarea>
       <button class="share-cancel" type="button" onclick="closeExt()">بستن</button>
+    </div>
+  </div>
+  <!-- v141: "install the catalogue as an app" sheet (only on the catalogue's own site) -->
+  <div class="share-ov" id="appOv" onclick="if(event.target===this) closeApp(true)">
+    <div class="share-sheet app-sheet" role="dialog" aria-label="نصب اپلیکیشن کاتالوگ">
+      <div class="share-grip"></div>
+      <div class="app-head">
+        <img class="app-icon" src="icons/icon-192.png" alt="" width="62" height="62">
+        <div>
+          <div class="app-title">کاتالوگ را مثل یک اپلیکیشن نصب کنید</div>
+          <div class="app-sub">همیشه روی صفحه‌ی اصلی گوشی شما؛ با یک لمس، تمام‌صفحه و سریع.</div>
+        </div>
+      </div>
+      <div class="app-perks"><span>بدون نیاز به ذخیره‌ی لینک</span><span>نمای تمام‌صفحه</span><span>همیشه به‌روز</span></div>
+      <div id="appBody"></div>
+      <button class="share-cancel" type="button" onclick="closeApp(true)">بعداً</button>
     </div>
   </div>
 
@@ -2194,6 +2240,7 @@
           <div class="cover-tag">Luca Holding · Est. 1395</div>
         </div>
         <button class="enter-btn" onclick="goTo('toc')">ورود به کاتالوگ</button>
+        <button class="cover-install" type="button" onclick="openApp()"><svg viewBox="0 0 24 24" fill="none"><rect x="6.5" y="2.8" width="11" height="18.4" rx="2.4" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.6v6.2M9.4 11.3l2.6 2.6 2.6-2.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.4 18h3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>نصب اپلیکیشن کاتالوگ</button>
         <button class="cover-replay" onclick="playIntro()"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.5"/><path d="M10 8.6v6.8l5.4-3.4z" fill="currentColor"/></svg>تماشای فیلم معرفی</button>
       </div>
     </div>
@@ -6719,12 +6766,14 @@
       return ($('lightbox') && $('lightbox').classList.contains('active')) ||
              ($('searchOv') && $('searchOv').classList.contains('open')) ||
              ($('shareOv') && $('shareOv').classList.contains('open')) ||
-             ($('extOv') && $('extOv').classList.contains('open'));
+             ($('extOv') && $('extOv').classList.contains('open')) ||
+             ($('appOv') && $('appOv').classList.contains('open'));
     }
     function closeTopOverlay(){
       if ($('lightbox') && $('lightbox').classList.contains('active')){ $('lightbox').classList.remove('active'); return true; }
       if ($('shareOv') && $('shareOv').classList.contains('open')){ closeShare(); return true; }
       if ($('extOv') && $('extOv').classList.contains('open')){ closeExt(); return true; }
+      if ($('appOv') && $('appOv').classList.contains('open')){ closeApp(true); return true; }
       if ($('searchOv') && $('searchOv').classList.contains('open')){ closeSearch(); return true; }
       return false;
     }
@@ -7001,6 +7050,129 @@
         .then(function(){ if (window.caches) caches.open('lucateli-v133').then(function(c){ return c.add(location.pathname); }).catch(function(){}); })
         .catch(function(){});
     });
+  })();
+
+  /* v141: tell customers the catalogue can be installed like an app.
+     - a gold "install" button on the cover, and a sheet that slides up once while browsing
+       (not during the film; hidden for 7 days after "later"; never once installed)
+     - Android/Chrome: one tap opens the phone's own install dialog; iPhone: two illustrated steps;
+       inside WhatsApp/Telegram/Instagram: how to open the link in the browser first
+     - first start from the home screen: a short welcome
+     Only on the catalogue's own site — never inside another page's frame (e.g. the claude.ai preview). */
+  (function(){
+    let framed = true; try{ framed = window.self !== window.top; }catch(e){}
+    const secure = location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+    const de = document.documentElement;
+    const installed = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+    const store = {
+      get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+      set(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+    };
+    window.openApp = function(){}; window.closeApp = function(){};
+    if (framed || !secure) return;
+
+    if (installed){
+      // first start from the home screen: welcome
+      if (!store.get('lc_app_welcome')){
+        store.set('lc_app_welcome', '1');
+        setTimeout(function(){
+          const el = document.getElementById('toast'); if (!el) return;
+          el.textContent = 'خوش آمدید! کاتالوگ از این پس روی صفحه‌ی اصلی گوشی شماست.';
+          el.classList.add('show'); clearTimeout(toast._t);
+          toast._t = setTimeout(function(){ el.classList.remove('show'); }, 4200);
+        }, 2600);
+      }
+      return;
+    }
+
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroid = /Android/i.test(ua);
+    const inApp = /FBAN|FBAV|Instagram|WhatsApp|Telegram|Line\/|Snapchat|musical_ly|TikTok|; wv\)/i.test(ua);
+    const isPhone = isIOS || isAndroid || (window.matchMedia && matchMedia('(pointer:coarse)').matches);
+    if (!isPhone) return;                      // computers: nothing to install from here
+    let deferred = null;
+    de.classList.add('can-install');
+
+    window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferred = e; });
+    window.addEventListener('appinstalled', function(){
+      deferred = null; de.classList.remove('can-install'); store.set('lc_app_installed', '1');
+      window.closeApp(false); if (window.toast) toast('نصب شد؛ کاتالوگ را از صفحه‌ی اصلی گوشی باز کنید.');
+    });
+
+    const SHARE_IC = '<span class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5v11M8.2 7.2L12 3.4l3.8 3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 10.5H6.5a1.5 1.5 0 0 0-1.5 1.5v7a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5H16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>';
+    const ADD_IC = '<span class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 8.5v7M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>';
+    const DL_IC = '<svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 19.5h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    const steps = function(list){ return '<div class="app-steps">' + list.map(function(t, i){ return '<div class="app-step"><span class="n">' + (i + 1) + '</span><span>' + t + '</span></div>'; }).join('') + '</div>'; };
+    const siteUrl = location.origin + location.pathname;
+
+    function body(){
+      if (inApp){
+        if (isAndroid){
+          const intent = 'intent://' + location.host + location.pathname + '#Intent;scheme=https;package=com.android.chrome;end';
+          return '<a class="app-go" href="' + intent + '">باز کردن در Chrome</a>'
+               + '<div class="app-note">این صفحه داخل برنامه‌ی پیام‌رسان باز شده است. برای نصب، آن را در مرورگر Chrome باز کنید و دوباره دکمه‌ی «نصب اپلیکیشن کاتالوگ» را بزنید.</div>';
+        }
+        return steps(['منوی بالای صفحه (<em>•••</em>) را بزنید و <em>Open in Safari</em> (باز کردن در سافاری) را انتخاب کنید.',
+                      'در سافاری دوباره دکمه‌ی «نصب اپلیکیشن کاتالوگ» را روی جلد بزنید.'])
+             + '<button class="app-go" type="button" onclick="appCopyLink()">کپی لینک کاتالوگ</button>';
+      }
+      if (isIOS){
+        return steps(['در نوار مرورگر، دکمه‌ی اشتراک‌گذاری ' + SHARE_IC + ' را بزنید.',
+                      'گزینه‌ی <em>Add to Home Screen</em> ' + ADD_IC + ' (افزودن به صفحه‌ی اصلی) را انتخاب کنید.',
+                      'در بالای صفحه <em>Add</em> (افزودن) را بزنید.']);
+      }
+      if (deferred){
+        return '<button class="app-go" type="button" onclick="appInstall()">' + DL_IC + 'نصب اپلیکیشن</button>';
+      }
+      return steps(['منوی مرورگر (<em>⋮</em>) را در گوشه‌ی بالای صفحه بزنید.',
+                    'گزینه‌ی <em>نصب برنامه</em> یا <em>افزودن به صفحه‌ی اصلی</em> (Install app / Add to Home screen) را انتخاب کنید.']);
+    }
+    window.appInstall = function(){
+      if (!deferred){ document.getElementById('appBody').innerHTML = body(); return; }
+      const d = deferred; deferred = null;
+      try{
+        d.prompt();
+        (d.userChoice || Promise.resolve({})).then(function(c){
+          if (c && c.outcome === 'accepted'){ window.closeApp(false); }
+          else { document.getElementById('appBody').innerHTML = body(); }
+        });
+      }catch(e){ document.getElementById('appBody').innerHTML = body(); }
+    };
+    window.appCopyLink = function(){
+      const done = function(){ if (window.toast) toast('لینک کپی شد؛ آن را در سافاری باز کنید.'); };
+      try{ navigator.clipboard.writeText(siteUrl).then(done, function(){ prompt('لینک کاتالوگ:', siteUrl); }); }
+      catch(e){ prompt('لینک کاتالوگ:', siteUrl); }
+    };
+    window.openApp = function(){
+      document.getElementById('appBody').innerHTML = body();
+      document.getElementById('appOv').classList.add('open');
+      store.set('lc_app_seen', String(Date.now()));
+      if (window.syncBack) setTimeout(syncBack, 0);
+    };
+    window.closeApp = function(later){
+      const ov = document.getElementById('appOv'); if (!ov.classList.contains('open')) return;
+      ov.classList.remove('open');
+      if (later) store.set('lc_app_later', String(Date.now()));
+      if (window.syncBack) setTimeout(syncBack, 0);
+    };
+    (function(){ const o = document.getElementById('appOv'); if (!o) return;
+      ['touchstart','touchmove','touchend','pointerdown','wheel'].forEach(function(ev){ o.addEventListener(ev, function(e){ e.stopPropagation(); }, {passive:true}); }); })();
+
+    // offer it once while browsing: after ~12 s inside the catalogue (not on the film/cover, no other sheet open)
+    const WEEK = 7 * 24 * 3600 * 1000;
+    const later = +store.get('lc_app_later') || 0;
+    if (store.get('lc_app_installed') || (later && Date.now() - later < WEEK)) return;
+    let shown = false, since = 0;
+    setInterval(function(){
+      if (shown || document.hidden) return;
+      const busy = (typeof current === 'undefined') || current === 'intro' || current === 'cover' || current === 'chat' ||
+                   document.querySelector('.share-ov.open, .search-ov.open, .lightbox.active') ||
+                   (document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName));
+      if (busy){ since = 0; return; }
+      since += 1;
+      if (since >= 12){ shown = true; window.openApp(); }
+    }, 1000);
   })();
 
   /* deep link: catalogue.html#detail-xxx opens that product directly (used by the share button) */
