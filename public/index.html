@@ -7,16 +7,20 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>کاتالوگ محصولات لوکاتلی و لوکامیکس</title>
-<meta name="description" content="کاتالوگ آنلاین محصولات لوکاتلی و لوکامیکس — ترازو، ظروف شیشه‌ای فریزری، سرویس ارکوپال، لوازم آماده‌سازی و لوازم برقی آشپزخانه؛ با 18 ماه گارانتی و سفارش مستقیم در واتساپ.">
+<title>کاتالوگ محصولات ویسمن، لوکاتلی و لوکامیکس</title>
+<meta name="description" content="کاتالوگ آنلاین محصولات ویسمن، لوکاتلی و لوکامیکس از گروه کارخانه‌جات ویسمن — ترازو، ظروف شیشه‌ای فریزری، سرویس ارکوپال، لوازم آماده‌سازی و لوازم برقی آشپزخانه؛ با 18 ماه گارانتی و سفارش مستقیم در واتساپ.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="کاتالوگ محصولات لوکاتلی و لوکامیکس">
-<meta property="og:description" content="ترازو، ظروف شیشه‌ای فریزری، سرویس ارکوپال و لوازم برقی آشپزخانه — مشاهده و سفارش آنلاین.">
+<meta property="og:site_name" content="Visman Group of Factories">
+<meta property="og:title" content="کاتالوگ محصولات ویسمن، لوکاتلی و لوکامیکس">
+<meta property="og:description" content="گروه کارخانه‌جات ویسمن — ترازو، ظروف شیشه‌ای فریزری، سرویس ارکوپال و لوازم برقی آشپزخانه؛ مشاهده و سفارش آنلاین.">
+<meta property="og:locale" content="fa_IR">
 <meta name="format-detection" content="telephone=no">
 <meta name="apple-mobile-web-app-title" content="لوکاتلی">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<meta property="og:image" content="og-image.jpg">
+<meta property="og:image" content="og-image-v2.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:alt" content="کاتالوگ محصولات ویسمن، لوکاتلی و لوکامیکس — Visman Group of Factories">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -1315,6 +1319,7 @@
     align-self:flex-start; background:#fff; color:#2e2e2e;
     border:1px solid rgba(12,34,51,.1); border-top-right-radius:4px;
   }
+  .msg.bot b{ font-weight:700; color:var(--navy-deep); }
   .msg.me{
     align-self:flex-end; background:var(--navy-deep); color:var(--cream);
     border-top-left-radius:4px;
@@ -1832,6 +1837,57 @@
   html.rotate .rotate-hint b{ font-size:18px; font-weight:700; color:#f3ead8; }
   html.rotate .rotate-hint span{ font-size:14px; color:rgba(243,234,216,.75); }
   @keyframes rhTurn{ 0%,20%{ transform:rotate(-90deg); } 55%,100%{ transform:rotate(0deg); } }
+
+  /* ===== v139: installed web app — the photo viewer keeps its buttons clear of the status bar and the
+     home indicator (--sa-t / --sa-b are the safe-area sizes measured by fitStage) ===== */
+  .lightbox{ padding:calc(28px + var(--sa-t, 0px)) 28px calc(28px + var(--sa-b, 0px)); }
+  .lightbox-close{ top:calc(20px + var(--sa-t, 0px)); }
+  .lb-hint{ top:calc(24px + var(--sa-t, 0px)); }
+  .lb-cap{ bottom:calc(26px + var(--sa-b, 0px)); }
+  html.phone .lightbox-close{ width:46px; height:46px; top:calc(14px + var(--sa-t, 0px)); left:14px; }
+  html.phone .lightbox-close svg{ width:22px; height:22px; }
+  html.phone .lb-hint{ left:68px; right:16px; transform:none; text-align:center; white-space:normal; line-height:1.6;
+                       top:calc(27px + var(--sa-t, 0px)); }
+  /* ===== v140: full-screen app mode (html.sa is set by fitStage when the phone draws its status bar and
+     home indicator over the page, i.e. the catalogue installed on the home screen). Every page keeps its
+     buttons and text inside the safe area (--sat / --sab, stage pixels); photos and page backgrounds run
+     edge to edge under the status bar and the home indicator. A normal browser tab is not affected. ===== */
+  html.sa .page{ top:var(--sat); bottom:var(--sab); }
+  html.sa .folio{ bottom:var(--sab); }
+  html.sa .toast{ bottom:calc(84px + var(--sab)); }
+  html.sa .search-ov{ padding-top:calc(22px + var(--sat)); padding-bottom:calc(20px + var(--sab)); }
+  html.sa .share-sheet{ padding-bottom:calc(24px + var(--sab)); }
+  /* product photos continue up under the status bar (their buttons stay where they are) */
+  html.sa .detail-hero, html.sa .bowl-hero, html.sa .detail-hero-large{ overflow:visible; }
+  html.sa .detail-hero > img, html.sa .bowl-hero > img{ margin-top:calc(-1 * var(--sat)); height:calc(100% + var(--sat)); }
+  html.sa .detail-hero-large::before{ content:""; position:absolute; left:0; right:0; bottom:100%; height:var(--sat); background:#fff; }
+  /* page headers continue up under the status bar; their buttons stay below it */
+  html.sa .about-top, html.sa .info-top, html.sa .chat-top, html.sa .addr-top, html.sa .contact-top{ margin-top:calc(-1 * var(--sat)); }
+  html.sa .about-top{ padding-top:calc(22px + var(--sat)); }
+  html.sa .info-top{ padding-top:calc(20px + var(--sat)); min-height:calc(78px + var(--sat)); }
+  html.sa .chat-top{ padding-top:calc(18px + var(--sat)); }
+  html.sa .addr-top{ padding-top:calc(20px + var(--sat)); }
+  html.sa .contact-top{ padding-top:calc(20px + var(--sat)); height:calc(20% + var(--sat)); min-height:calc(170px + var(--sat)); }
+  html.sa .about-top > .back-btn, html.sa .info-top > .back-btn, html.sa .chat-top > .back-btn,
+  html.sa .addr-top > .back-btn, html.sa .contact-top > .back-btn, html.sa .toc-search-btn{ margin-top:var(--sat); }
+  /* full-page backgrounds run to both edges */
+  html.sa .cover, html.sa .toc, html.sa .list{ margin-top:calc(-1 * var(--sat)); height:calc(100% + var(--sat) + var(--sab)); }
+  html.sa .cover{ padding-top:calc(72px + var(--sat)); padding-bottom:calc(58px + var(--sab)); }
+  html.sa .toc{ padding-top:calc(50px + var(--sat)); padding-bottom:calc(92px + var(--sab)); }
+  html.sa .list{ padding-top:calc(96px + var(--sat)); padding-bottom:calc(70px + var(--sab)); }
+  html.sa .list-orn{ top:var(--sat); bottom:var(--sab); }
+  html.sa .page[data-page="intro"]::before{ content:""; position:absolute; left:0; right:0; top:calc(-1 * var(--sat));
+    bottom:calc(-1 * var(--sab)); background:#071521; }
+  /* a soft shade behind the status bar keeps the clock readable over light photos and pages */
+  .sa-scrim{ display:none; }
+  html.sa .sa-scrim{ display:block; position:absolute; left:0; right:0; top:0; height:calc(var(--sat) + 56px); z-index:75;
+    pointer-events:none; background:linear-gradient(180deg, rgba(12,34,51,.44) 0%, rgba(12,34,51,.26) 42%, rgba(12,34,51,.09) 72%, rgba(12,34,51,0) 100%); }
+
+  /* v139: product pages a little more compact on phones (same fonts), so the photo gets the room */
+  html.phone .detail-body{ padding:28px 30px 80px; }
+  html.phone .spec-table td{ padding-top:11px; padding-bottom:11px; }
+  html.phone .detail-sub{ margin-bottom:10px; }
+  html.phone .detail-cta{ padding-top:14px; }
 </style>
 </head>
 <body>
@@ -5621,7 +5677,7 @@
             <svg viewBox="0 0 24 24" fill="none"><path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 6.5l8.5 6 8.5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
           <button class="address-btn" onclick="goTo('address')">مشاهده آدرس</button>
-          <a class="icon-btn lg" aria-label="وب‌سایت ویسمن" href="https://vismanpen.com" target="_blank" rel="noopener">
+          <a class="icon-btn lg" aria-label="وب‌سایت لوکاسنتر" href="http://locacenter.ir/" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.5 3.8 6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-6-3.8-9s1.3-6.5 3.8-9z" stroke="currentColor" stroke-width="1.6"/></svg>
           </a>
         </div>
@@ -5679,6 +5735,7 @@
       <svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
   </div>
+  <div class="sa-scrim" aria-hidden="true"></div>
 
 </div>
 
@@ -5747,6 +5804,18 @@
     d.className = cls;
     if (text != null) d.textContent = text;
     return d;
+  }
+  // v137: answers are shown with light formatting — **bold** becomes bold, list markers become «•»,
+  // and stray markdown signs never reach the customer (the text is escaped first: no HTML from the model)
+  function chatFormat(t){
+    return String(t || '')
+      .replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; })
+      .replace(/^[ \t]*#{1,6}[ \t]*/gm, '')
+      .replace(/^[ \t]*[*\-•][ \t]+/gm, '• ')
+      .replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>')
+      .replace(/__([^_\n]+)__/g, '<b>$1</b>')
+      .replace(/\*\*|__/g, '')
+      .replace(/\n{3,}/g, '\n\n');
   }
   function chatScrollDown(){
     const sc = document.getElementById('chatScroll');
@@ -5852,13 +5921,13 @@
         if (!delta) continue;
         if (first){ bubble.textContent = ''; bubble.style.padding = ''; first = false; }
         acc += delta;
-        bubble.textContent = acc;
+        bubble.innerHTML = chatFormat(acc);
         chatScrollDown();
       }
       acc += decoder.decode();
 
       if (!acc.trim()) throw { code: 'upstream_error', detail: 'empty reply' };
-      bubble.textContent = acc;
+      bubble.innerHTML = chatFormat(acc);
       chatTurns.push({role:'assistant', content:acc});
       chatFails = 0;
     } catch (e) {
@@ -6337,6 +6406,25 @@
   try{ if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', checkRotate); }catch(e){}
   checkRotate();
 
+  /* v139/v140: installed web app (iPhone "Add to Home Screen", Android app mode): the status bar and
+     the home indicator are drawn on top of the page there. Their sizes are measured here; fitStage keeps
+     every button and text in the safe area between them (nothing is placed where the system takes the
+     taps), while the pictures and backgrounds still fill the whole screen. */
+  function safeInsets(){
+    let p = document.getElementById('safeProbe');
+    if (!p){
+      p = document.createElement('div');
+      p.id = 'safeProbe';
+      p.setAttribute('aria-hidden', 'true');
+      p.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;'
+        + 'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
+      (document.body || document.documentElement).appendChild(p);
+    }
+    const cs = getComputedStyle(p);
+    const t = Math.round(parseFloat(cs.paddingTop) || 0), b = Math.round(parseFloat(cs.paddingBottom) || 0);
+    return { top: Math.min(Math.max(t, 0), 90), bottom: Math.min(Math.max(b, 0), 70) };
+  }
+
   function fitStage(){
     const stage = document.querySelector('.stage');
     if (!stage) return;
@@ -6382,19 +6470,32 @@
     stage.style.width = '';
     // v123 phones: the stage keeps its 540px design width but grows taller to match the
     // phone's own aspect ratio, so it fills the whole screen (no blank strip at the bottom).
+    const ins = safeInsets();
+    de.style.setProperty('--sa-t', ins.top + 'px');
+    de.style.setProperty('--sa-b', ins.bottom + 'px');
+    const prevStageH = stage.style.height;
     if (narrow){
+      // v140: full screen, like an app. The stage runs edge to edge (under the status bar and the home
+      // indicator); the pages keep their content in the safe area between them (html.sa, --sat/--sab in
+      // stage pixels) while photos and page backgrounds continue to the edges of the screen.
+      const hc = Math.max(320, h - ins.top - ins.bottom);   // visible height between status bar and home indicator
       const sW = w / 540;
       let stageW = 540;
-      let stageH = Math.round(h / sW);
-      stageH = Math.min(stageH, 1500);
-      if (stageH < PHONE_MIN_H){
+      let contentH = Math.min(Math.round(hc / sW), 1500);
+      if (contentH < PHONE_MIN_H){
         // short screens (e.g. inside an app's viewer frame): keep the height the layout needs
         // and widen the page a little instead of leaving dark bars at the sides
-        stageH = PHONE_MIN_H;
-        stageW = Math.min(620, Math.round(PHONE_MIN_H * w / h));
+        contentH = PHONE_MIN_H;
+        stageW = Math.min(620, Math.round(PHONE_MIN_H * w / hc));
       }
-      let s = Math.min(w / stageW, h / stageH);
+      let s = Math.min(w / stageW, hc / contentH);
       if (!isFinite(s) || s <= 0) s = 1;
+      const sat = ins.top ? +(ins.top / s).toFixed(2) : 0;
+      const sab = ins.bottom ? +(ins.bottom / s).toFixed(2) : 0;
+      const stageH = Math.ceil(contentH + sat + sab);
+      de.classList.toggle('sa', !!(sat || sab));
+      de.style.setProperty('--sat', sat + 'px');
+      de.style.setProperty('--sab', sab + 'px');
       stage.style.width = stageW + 'px';
       stage.style.height = stageH + 'px';
       de.style.setProperty('--stage-h', stageH + 'px');
@@ -6403,16 +6504,20 @@
       stage.style.marginBottom = -(stageH - stageH * s) + 'px';
       stage.style.borderRadius = '0';
       document.body.style.padding = '0';
-      document.body.style.alignItems = (h / stageH > sW) ? 'center' : 'flex-start';
+      document.body.style.alignItems = (stageH * s < h - 1) ? 'center' : 'flex-start';
       document.body.style.overflow = 'hidden';
       window.__stageScale = s;
+      if (prevStageH !== stage.style.height && window.fitActiveDetail) setTimeout(window.fitActiveDetail, 0);
       return;
     }
+    de.classList.remove('sa');
+    de.style.setProperty('--sat', '0px');
+    de.style.setProperty('--sab', '0px');
     stage.style.height = '';
     de.style.removeProperty('--stage-h');
     const margin = narrow ? 0 : 16;
     const availW = Math.max(w - margin * 2, 100);
-    const availH = Math.max(h - margin * 2, 100);
+    const availH = Math.max(h - margin * 2 - ins.top - ins.bottom, 100);
 
     // honour BOTH axes: the full page is always on screen, never scrolled or clipped
     let scale = Math.min(1, availW / 540, availH / 1040);
@@ -6428,7 +6533,7 @@
     // edge-to-edge only when it really reaches the edges; otherwise keep the card corners
     stage.style.borderRadius = (narrow && availW - scaledW < 12) ? '0' : '6px';
 
-    document.body.style.padding = margin + 'px';
+    document.body.style.padding = (margin + ins.top) + 'px ' + margin + 'px ' + (margin + ins.bottom) + 'px';
     document.body.style.alignItems = 'center';
     document.body.style.overflow = 'hidden';
   }
@@ -6441,6 +6546,10 @@
   window.addEventListener('orientationchange', fitStage);
   document.addEventListener('DOMContentLoaded', fitStage);
   window.addEventListener('load', fitStage);
+  window.addEventListener('load', function(){ setTimeout(fitStage, 300); setTimeout(fitStage, 1200); });
+  window.addEventListener('pageshow', function(){ setTimeout(fitStage, 60); });
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) setTimeout(fitStage, 60); });
+  window.addEventListener('orientationchange', function(){ setTimeout(fitStage, 350); });
   fitStage();
   setTimeout(fitStage, 50);
   setTimeout(fitStage, 300);
@@ -6648,6 +6757,14 @@
     const pg = document.getElementById('page-' + current); if (!pg) return;
     const body = pg.querySelector('.detail-body'); if (!body) return;
     const cta = body.querySelector('.detail-cta') || body.querySelector('.cta-primary'); if (!cta) return;
+    // v139: the product photo starts from its designed height every time (it may grow again below)
+    const detail = body.parentElement;
+    const hero = detail && detail.firstElementChild;
+    const hasHero = !!(hero && hero !== body && /(^|\s)(detail-hero|detail-hero-large|bowl-hero)(\s|$)/.test(hero.className));
+    if (hasHero){
+      if (hero.dataset.h0 === undefined) hero.dataset.h0 = hero.style.height || '';
+      hero.style.height = hero.dataset.h0;
+    }
     const limit = () => {
       const s = window.__stageScale || 1;
       return body.getBoundingClientRect().bottom - 62 * s;   // folio height + breathing room
@@ -6657,7 +6774,30 @@
       if (cta.getBoundingClientRect().bottom <= limit() + 1) break;
       body.classList.add(lvl);
     }
+    if (hasHero && !body.classList.contains('fit1')) growHero(hero, body, detail);
   };
+  /* v139: photos first — whatever height the text and the buttons do not need goes to the product
+     photo (up to half the page). Wide photos are only enlarged while most of their width stays in view. */
+  function growHero(hero, body, detail){
+    const pageH = detail.offsetHeight, heroH = hero.offsetHeight, heroW = hero.offsetWidth;
+    if (!pageH || !heroH || !heroW) return;
+    const f = body.style.flex, h = body.style.height;
+    body.style.flex = '0 0 auto'; body.style.height = 'auto';        // the text block at its natural height
+    const need = body.offsetHeight;
+    body.style.flex = f; body.style.height = h;
+    const spare = pageH - heroH - need - 24;                         // keep a little air above the buttons
+    if (spare < 12) return;
+    let max = Math.round(pageH * 0.5);
+    const img = hero.querySelector('img');
+    if (img && getComputedStyle(img).objectFit === 'cover'){
+      const ics = getComputedStyle(img);
+      const ext = Math.max(0, -parseFloat(ics.marginTop) || 0);      // v140: the part running under the status bar
+      const nw = img.naturalWidth || +img.getAttribute('width') || 0, nh = img.naturalHeight || +img.getAttribute('height') || 0;
+      if (nw && nh) max = Math.min(max, Math.round(heroW * nh / (nw * 0.72)) - ext);   // ≥ 72% of a wide photo's width visible
+    }
+    const target = Math.min(heroH + spare, max);
+    if (target - heroH >= 12) hero.style.height = Math.round(target) + 'px';
+  }
   window.addEventListener('resize', () => setTimeout(fitActiveDetail, 60));
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitActiveDetail());
 
