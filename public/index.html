@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0c2233">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1810,6 +1810,19 @@
   html.phone .map-card{ height:330px; }
   html.phone .addr-text{ font-size:14.5px; }
   html.phone .addr-label{ font-size:15px; }
+
+  /* v137: photo viewer zoom */
+  .lightbox{ touch-action:none; overflow:hidden; }
+  #lightboxImg{ transform-origin:50% 50%; will-change:transform; user-select:none; -webkit-user-drag:none; cursor:zoom-in; }
+  .lightbox.zoomed #lightboxImg{ cursor:grab; }
+  #lightboxImg{ position:relative; z-index:1; }
+  .lightbox-close, .lb-hint{ z-index:5; }
+  .lightbox.zoomed .lightbox-close{ background:rgba(12,34,51,.75); }
+  .lightbox.zoomed .lb-nav, .lightbox.zoomed .lb-cap{ opacity:0; pointer-events:none; }
+  .lb-hint{ position:absolute; left:50%; top:24px; transform:translateX(-50%); font-family:'Vazirmatn',sans-serif; font-size:12px;
+            color:rgba(243,234,216,.75); white-space:nowrap; pointer-events:none; transition:opacity .3s; }
+  .lightbox.zoomed .lb-hint{ opacity:0; }
+  html.phone .stage, html, body{ touch-action:pan-x pan-y; }
   /* phone held sideways (html.rotate is set by checkRotate(): real device orientation, not the keyboard) */
   .rotate-hint{ display:none; }
   html.rotate .rotate-hint{ display:flex; position:fixed; inset:0; z-index:2147483000; align-items:center; justify-content:center;
@@ -5677,6 +5690,7 @@
   <button class="lb-nav lb-next" id="lbNext" aria-label="عکس بعدی" onclick="lbStep(1,event)"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <button class="lb-nav lb-prev" id="lbPrev" aria-label="عکس قبلی" onclick="lbStep(-1,event)"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <div class="lb-cap" id="lbCap"></div>
+  <div class="lb-hint">برای بزرگ‌نمایی دو بار بزنید یا با دو انگشت باز کنید</div>
 </div>
 
 <script>
@@ -5763,6 +5777,17 @@
     box.appendChild(row);
     sc.appendChild(box);
   }
+
+  // v137: wake the chat server (and open the connection to it) as soon as the reader heads for
+  // the chat, so the first answer does not wait for a cold start
+  let chatWarmAt = 0;
+  function chatWarm(){
+    const now = Date.now(); if (now - chatWarmAt < 60000) return; chatWarmAt = now;
+    try { fetch(CHAT_ENDPOINT + '?warm=1', { cache: 'no-store' }).catch(function(){}); } catch (e) {}
+  }
+  document.addEventListener('click', function(e){
+    if (e.target && e.target.closest && e.target.closest('.chat-cta, .toc-contact, [onclick*="goTo(\'contact\')"]')) chatWarm();
+  }, true);
 
   function chatAsk(q){
     const inp = document.getElementById('chatInput');
@@ -5876,6 +5901,8 @@
   (function initChat(){
     const inp = document.getElementById('chatInput');
     if (!inp) return;
+    inp.addEventListener('focus', chatWarm);
+    if (/^#?chat$/.test(location.hash)) chatWarm();
     inp.addEventListener('input', function(){
       this.style.height = '46px';
       this.style.height = Math.min(this.scrollHeight, 96) + 'px';
@@ -5995,6 +6022,7 @@
     const rest = [...document.querySelectorAll('section[data-page]')].map(function(s){ return s.dataset.page; });
     let k = 0;
     setTimeout(function step(){
+      if (current === 'chat'){ setTimeout(step, 2000); return; }   // v137: the chat gets the whole connection
       while (k < rest.length && HYD.has(rest[k])) k++;
       if (k >= rest.length) return;
       hydratePage(rest[k++]); setTimeout(step, 700);
@@ -6079,6 +6107,7 @@
     const lb = document.getElementById('lightbox');
     document.getElementById('lightboxImg').src = src;
     LB.img = img || null; LB.btns = lbSwatches(img);
+    if (window.lbResetZoom) lbResetZoom();
     lbSync();
     lb.classList.add('active');
   }
@@ -6089,6 +6118,7 @@
     const b=LB.btns[(i+dir+n)%n];
     b.click();
     const im=document.getElementById('lightboxImg');
+    if (window.lbResetZoom) lbResetZoom();
     im.style.opacity='0';
     setTimeout(()=>{ im.src = LB.img.currentSrc || LB.img.src; im.style.opacity='1'; lbSync(); }, 120);
   }
@@ -6098,6 +6128,7 @@
     lb.addEventListener('touchstart',e=>{ if(e.touches.length===1){ sx=e.touches[0].clientX; sy=e.touches[0].clientY; } },{passive:true});
     lb.addEventListener('touchend',e=>{
       if(sx===null) return; const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy; sx=null;
+      if(lb.classList.contains('zoomed') || (lb._pinched && Date.now()-lb._pinched<500)) return;   // zoomed: dragging looks around
       if(Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)*1.3){ lb._swiped=Date.now(); lbStep(dx>0?1:-1); }
     },{passive:true});
     ['touchstart','touchmove','touchend'].forEach(ev=>lb.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));
@@ -6107,9 +6138,93 @@
       e.stopImmediatePropagation(); e.preventDefault();
     },true);
   })();
+
+  /* v137: zoom inside the photo viewer — two fingers to zoom, double-tap (or double-click) to zoom in/out,
+     one finger (or the mouse) to look around while zoomed. */
+  (function(){
+    const lb = document.getElementById('lightbox'), im = document.getElementById('lightboxImg');
+    if (!lb || !im) return;
+    const MAX = 4;
+    let z = 1, tx = 0, ty = 0, pinch = null, pan = null, lastTap = 0, lastX = 0, lastY = 0, moved = false;
+    function limits(){
+      const w = im.offsetWidth, h = im.offsetHeight;
+      return { x: Math.max(0, (w * z - w) / 2 + 40), y: Math.max(0, (h * z - h) / 2 + 40) };
+    }
+    function clampPan(){ const L = limits(); tx = Math.max(-L.x, Math.min(L.x, tx)); ty = Math.max(-L.y, Math.min(L.y, ty)); }
+    function apply(anim){
+      im.style.transition = anim ? 'transform .22s ease, opacity .18s ease' : 'opacity .18s ease';
+      im.style.transform = (z > 1.001) ? ('translate(' + tx + 'px,' + ty + 'px) scale(' + z + ')') : '';
+      lb.classList.toggle('zoomed', z > 1.01);
+    }
+    window.lbResetZoom = function(){ z = 1; tx = 0; ty = 0; pinch = null; pan = null; apply(false); };
+    function zoomAt(nz, cx, cy, anim){
+      nz = Math.max(1, Math.min(MAX, nz));
+      const r = im.getBoundingClientRect();
+      const ox = cx - (r.left + r.width / 2), oy = cy - (r.top + r.height / 2);   // point under the finger
+      tx = tx - ox * (nz / z - 1); ty = ty - oy * (nz / z - 1);
+      z = nz; if (z <= 1.001){ z = 1; tx = 0; ty = 0; } clampPan(); apply(anim);
+    }
+    const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    lb.addEventListener('touchstart', function(e){
+      if (e.touches.length === 2){
+        pinch = { d: dist(e.touches), z: z, cx: (e.touches[0].clientX + e.touches[1].clientX) / 2, cy: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+        pan = null; lb._pinched = Date.now();
+      } else if (e.touches.length === 1){
+        moved = false;
+        pan = { x: e.touches[0].clientX, y: e.touches[0].clientY, tx: tx, ty: ty };
+      }
+    }, { passive: true });
+    lb.addEventListener('touchmove', function(e){
+      if (e.touches.length === 2 && pinch){
+        e.preventDefault();
+        const nz = pinch.z * dist(e.touches) / pinch.d;
+        zoomAt(nz, pinch.cx, pinch.cy, false); pinch.z = z; pinch.d = dist(e.touches);
+        lb._pinched = Date.now();
+      } else if (e.touches.length === 1 && pan && z > 1.01){
+        e.preventDefault();
+        const dx = e.touches[0].clientX - pan.x, dy = e.touches[0].clientY - pan.y;
+        if (Math.abs(dx) + Math.abs(dy) > 6) moved = true;
+        tx = pan.tx + dx; ty = pan.ty + dy; clampPan(); apply(false);
+      } else if (e.touches.length === 1 && pan){
+        if (Math.abs(e.touches[0].clientX - pan.x) + Math.abs(e.touches[0].clientY - pan.y) > 10) moved = true;
+      }
+    }, { passive: false });
+    lb.addEventListener('touchend', function(e){
+      if (e.touches.length < 2) pinch = null;
+      if (e.touches.length) return;
+      if (z < 1.05) window.lbResetZoom(); else apply(false);
+      const t = e.changedTouches[0];
+      if (!t || moved || e.target !== im) { pan = null; return; }
+      const now = Date.now();
+      if (now - lastTap < 320 && Math.hypot(t.clientX - lastX, t.clientY - lastY) < 40){
+        lastTap = 0;
+        if (z > 1.01) window.lbResetZoom(), apply(true); else zoomAt(2.5, t.clientX, t.clientY, true);
+        lb._pinched = Date.now();
+      } else { lastTap = now; lastX = t.clientX; lastY = t.clientY; }
+      pan = null;
+    }, { passive: true });
+    // mouse: double-click to zoom, drag to look around
+    im.addEventListener('dblclick', function(e){ e.stopPropagation(); if (lb._pinched && Date.now() - lb._pinched < 700) return; if (z > 1.01){ window.lbResetZoom(); apply(true); } else zoomAt(2.5, e.clientX, e.clientY, true); });
+    im.addEventListener('mousedown', function(e){
+      if (z <= 1.01) return; e.preventDefault();
+      const st = { x: e.clientX, y: e.clientY, tx: tx, ty: ty };
+      function mv(ev){ tx = st.tx + ev.clientX - st.x; ty = st.ty + ev.clientY - st.y; clampPan(); apply(false); }
+      function up(){ window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); }
+      window.addEventListener('mousemove', mv); window.addEventListener('mouseup', up);
+    });
+    im.addEventListener('wheel', function(e){ if (!lb.classList.contains('active')) return; e.preventDefault(); zoomAt(z * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX, e.clientY, false); }, { passive: false });
+  })();
+
+  // v137: the catalogue page itself never zooms with two fingers (iOS ignores the viewport setting)
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, { passive: false });
+  document.addEventListener('gesturechange', function(e){ e.preventDefault(); }, { passive: false });
+  document.addEventListener('touchmove', function(e){ if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
   function closeLightbox(e){
     if (e) e.stopPropagation();
     const lbx=document.getElementById('lightbox'); if(e && lbx._swiped && Date.now()-lbx._swiped<450) return;
+    if (e && e.target && e.target.id === 'lightboxImg') return;          // v137: tapping the photo zooms, it does not close
+    if (e && lbx._pinched && Date.now()-lbx._pinched<500) return;
+    if (window.lbResetZoom) lbResetZoom();
     document.getElementById('lightbox').classList.remove('active');
   }
   document.addEventListener('DOMContentLoaded', function(){
@@ -6238,6 +6353,8 @@
       return;
     }
     if (kbShift){ kbShift = 0; stage.style.translate = ''; }
+    // v137: the browser is zoomed in (pinch) -> leave the layout alone until it is back to normal
+    if (fitSized && window.visualViewport && window.visualViewport.scale > 1.02) return;
     fitSized = true;
     const de = document.documentElement;
     const vv = window.visualViewport;
@@ -6335,12 +6452,15 @@
     if (!stage) return;
     let touchStartX = null;
     let touchStartY = null;
+    let multi = false;
     stage.addEventListener('touchstart', function(e){
-      if (e.touches.length !== 1) return;
+      if (e.touches.length !== 1){ multi = true; touchStartX = null; return; }
+      multi = false;
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
     }, {passive:true});
     stage.addEventListener('touchend', function(e){
+      if (multi){ if (!e.touches.length) multi = false; touchStartX = null; return; }
       if (touchStartX === null) return;
       const touch = e.changedTouches[0];
       const dx = touch.clientX - touchStartX;
@@ -6421,6 +6541,12 @@
 
     document.addEventListener('touchmove', function(e){
       if (!active || !dragEl) return;
+      if (e.touches.length > 1){                       // v137: pinch, not a pull
+        active = false; dragging = false;
+        const pg = dragEl, tg = dragTarget; dragEl = null; dragTarget = null;
+        reset(pg); reset(tg);
+        return;
+      }
       const t = e.touches[0];
       const dx = t.clientX - sx, dy = t.clientY - sy;
       if (!dragging){

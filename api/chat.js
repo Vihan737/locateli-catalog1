@@ -11,12 +11,19 @@
 //   OPENROUTER_API_KEY  — OpenRouter        (openrouter.ai/keys)
 // Optional: GEMINI_MODEL / GROQ_MODEL / OPENROUTER_MODEL = a model to try first.
 //
+// Speed (v137): the answer is STREAMED word by word as the model writes it (first words
+// after ~1 s instead of waiting for the whole answer), the model that worked last time is
+// tried first, models that are busy/out of quota are skipped for a while, "thinking" is
+// switched off where the model allows it, and each model gets a short time to start
+// answering before the next one is tried.
+//
 // Health check / diagnostics (safe to open in a browser):
-//   GET  /api/chat            -> {"ok":true,...}   the function is deployed
-//   GET  /api/chat?diag=1     -> which keys are set + a tiny live test per provider
-//   GET  /api/chat?diag=full  -> a real question with the REAL advisor prompt
-//   GET  /api/chat?models=1   -> the Gemini models this key can use
-//   POST /api/chat            -> {"turns":[{"role":"user","content":"..."}]}  (streams plain text)
+//   GET  /api/chat             -> {"ok":true,...}   the function is deployed
+//   GET  /api/chat?diag=1      -> which keys are set + a tiny live test per provider
+//   GET  /api/chat?diag=full   -> a real question with the real advisor prompt (+ timings)
+//   GET  /api/chat?diag=speed  -> time-to-first-word of the first Gemini models
+//   GET  /api/chat?models=1    -> the Gemini models this key can use
+//   POST /api/chat             -> {"turns":[{"role":"user","content":"..."}]}  (streams plain text)
 
 'use strict';
 
@@ -31,6 +38,7 @@ const KB = {
  "productsHeader": "== اطلاعات کامل محصولات (به ترتیب کاتالوگ) ==",
  "end": "از این پس، پیام‌ها پرسش‌های مشتری هستند؛ تنها پاسخ مشاور را بنویسید.",
  "tok": {
+  "core": 1334,
   "coreCompact": 648,
   "company": 356,
   "service": 479,
@@ -696,13 +704,14 @@ const SYSTEM_PROMPT = [
 const MAX_TURNS = 12;               // conversation turns kept
 const MAX_TEXT_CHARS = 2000;        // per message
 const MAX_HISTORY_CHARS = 8000;     // whole conversation
-const MAX_OUTPUT_TOKENS = 1024;     // the visible answer
-const DEADLINE_MS = 50000;          // whole request (vercel.json allows 60 s)
-const ATTEMPT_TIMEOUT_MS = 25000;   // one provider/model attempt
-// Groq's free tier allows 8,000 tokens per minute per request budget
-// (prompt + answer), so smaller providers get a trimmed prompt: the rules,
-// company, contacts, the 33-product index, the buying guides and only the
-// product sheets the conversation is about.
+const MAX_OUTPUT_TOKENS = 900;      // the visible answer (3–5 sentences need far less)
+const DEADLINE_MS = 52000;          // whole request (vercel.json allows 60 s)
+const FIRST_WORD_MS = 12000;        // a model that has not started answering by then is skipped
+// Prompt size per provider. Gemini: rules + company + contacts + the 33-product index +
+// buying guides + the full sheets of the products the conversation is about (the same
+// stable beginning every time, so Google's automatic prompt cache kicks in).
+// Groq's free tier allows 8,000 tokens per request budget, so it gets a tighter version.
+const GEMINI_TOKENS = 8500;
 const COMPACT_TOKENS = 5000;
 const TINY_TOKENS = 3200;           // retry size if a provider still says "too large"
 const TOKENS_PER_CHAR = 0.42;       // rough estimate for Persian text (diagnostics only)
@@ -711,9 +720,10 @@ const uniq = (arr) => [...new Set(arr.filter(Boolean))];
 
 const GEMINI_MODELS = uniq([
   process.env.GEMINI_MODEL,
-  'gemini-3.8-flash',
+  'gemini-3.6-flash',
   'gemini-flash-latest',
   'gemini-3.7-flash',
+  'gemini-3.8-flash',
   'gemini-3.5-flash',
   'gemini-3.5-flash-lite',
   'gemini-3.1-flash-lite',
@@ -731,6 +741,12 @@ const OPENROUTER_MODELS = uniq([
   'openrouter/free',
 ]);
 
+// ------------------------------------------- memory of a warm function instance ----
+// (Vercel keeps an instance alive between requests; these make every later answer faster)
+let PREFERRED = null;                 // 'provider/model' that answered last
+const COOLDOWN = new Map();           // 'provider/model' -> skip until this time
+const THINK_OK = new Map();           // gemini model -> index of the thinking setting it accepts
+
 // ------------------------------------------------------------- utilities ----
 class UpstreamError extends Error {
   constructor(status, message) {
@@ -743,10 +759,14 @@ class UpstreamError extends Error {
 function redact(text) {
   let out = String(text == null ? '' : text);
   for (const name of ['GEMINI_API_KEY', 'GROQ_API_KEY', 'OPENROUTER_API_KEY']) {
-    const v = process.env[name];
+    const v = envKey(name);
     if (v && v.length > 6) out = out.split(v).join('***');
   }
   return out.slice(0, 600);
+}
+
+function envKey(name) {
+  return String(process.env[name] || '').trim();
 }
 
 function keyInfo(name) {
@@ -756,10 +776,6 @@ function keyInfo(name) {
   const info = { present: true, prefix: v.slice(0, 4), length: v.length };
   if (v !== raw) info.warning = 'the key has spaces or a line break around it — remove them in Vercel';
   return info;
-}
-
-function envKey(name) {
-  return String(process.env[name] || '').trim();
 }
 
 function sendJson(res, status, payload) {
@@ -803,7 +819,7 @@ function rateLimited(ip) {
 
 const approxTokens = (s) => Math.ceil(String(s).length * TOKENS_PER_CHAR);
 
-// ----------------------------------------------- relevance (small budgets) --
+// ----------------------------------------------------------- prompt size --
 function norm(s) {
   return String(s || '')
     .toLowerCase()
@@ -849,13 +865,12 @@ function relevantProducts(turns) {
 }
 
 // KB.tok / p.n = token counts measured at build time (o200k tokenizer)
-function compactPrompt(turns, budget) {
-  const tiny = budget <= TINY_TOKENS;
-  const parts = tiny
+function sizedPrompt(turns, budget, fullCore) {
+  const parts = budget <= TINY_TOKENS
     ? ['coreCompact', 'company', 'service', 'index']
-    : ['coreCompact', 'company', 'service', 'index', 'guides'];
+    : [fullCore ? 'core' : 'coreCompact', 'company', 'service', 'index', 'guides'];
   const head = parts.map((k) => KB[k]).join('\n\n');
-  let used = parts.reduce((n, k) => n + KB.tok[k], 0) + KB.tok.end + 80;
+  let used = parts.reduce((n, k) => n + (KB.tok[k] || approxTokens(KB[k])), 0) + KB.tok.end + 80;
   const picked = [];
   for (const r of relevantProducts(turns)) {
     const cost = KB.products[r.i].n + 4;
@@ -869,84 +884,140 @@ function compactPrompt(turns, budget) {
     : '== اطلاعات کامل محصولات ==\nبرای این پرسش، فهرست و راهنمای انتخاب بالا کافی است؛ اگر جزئیاتی لازم بود که در آن‌ها نیست، مشتری را به همکاران فروش ارجاع دهید.';
   return [head, blocks, KB.end].join('\n\n');
 }
+const compactPrompt = (turns, budget) => sizedPrompt(turns, budget, false);
 
-// ------------------------------------------------------------- providers ----
-async function fetchJson(url, init, timeoutMs) {
+// ------------------------------------------------------------ streaming ----
+// Reads a Server-Sent-Events body and calls onData(jsonString) for every "data:" line.
+async function readSSE(body, onData) {
+  const reader = body.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let i;
+    while ((i = buf.indexOf('\n')) !== -1) {
+      const line = buf.slice(0, i).replace(/\r$/, '');
+      buf = buf.slice(i + 1);
+      if (line.startsWith('data:')) {
+        const d = line.slice(5).trim();
+        if (d && d !== '[DONE]') onData(d);
+      }
+    }
+  }
+  const last = buf.trim();
+  if (last.startsWith('data:')) {
+    const d = last.slice(5).trim();
+    if (d && d !== '[DONE]') onData(d);
+  }
+}
+
+// one streamed request with a "first word" timer and an overall timer
+async function streamRequest(url, init, t, onChunkJson) {
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), Math.max(1000, timeoutMs));
+  let timer = setTimeout(() => ctl.abort(new Error('no answer within ' + Math.round(t.firstMs / 1000) + 's')), t.firstMs);
+  let firstSeen = false;
+  const firstWord = () => {
+    if (firstSeen) return;
+    firstSeen = true;
+    clearTimeout(timer);
+    timer = setTimeout(() => ctl.abort(new Error('answer took too long')), Math.max(2000, t.totalMs));
+  };
   try {
     const r = await fetch(url, Object.assign({}, init, { signal: ctl.signal }));
-    const data = await r.json().catch(() => null);
-    return { r, data };
+    if (!r.ok) {
+      const raw = await r.text().catch(() => '');
+      let msg = 'HTTP ' + r.status;
+      try {
+        const j = JSON.parse(raw);
+        const e = Array.isArray(j) ? j[0] && j[0].error : j.error;
+        if (e) msg = typeof e === 'string' ? e : e.message || JSON.stringify(e);
+      } catch (x) {
+        if (raw) msg += ': ' + raw.slice(0, 200);
+      }
+      throw new UpstreamError(r.status, msg);
+    }
+    await readSSE(r.body, (d) => onChunkJson(d, firstWord));
   } catch (e) {
-    if (e && e.name === 'AbortError') throw new UpstreamError(504, 'timeout after ' + Math.round(timeoutMs / 1000) + 's');
-    throw new UpstreamError(502, 'network error: ' + ((e && e.message) || e));
+    if (e instanceof UpstreamError) throw e;
+    const aborted = e && (e.name === 'AbortError' || ctl.signal.aborted);
+    const why = aborted ? (ctl.signal.reason && ctl.signal.reason.message) || 'timeout' : 'network error: ' + ((e && e.message) || e);
+    throw new UpstreamError(aborted ? 504 : 502, why);
   } finally {
     clearTimeout(timer);
   }
 }
 
-function errorMessage(data, r) {
-  if (data && data.error) {
-    if (typeof data.error === 'string') return data.error;
-    return data.error.message || JSON.stringify(data.error);
-  }
-  return 'HTTP ' + r.status;
-}
+// ------------------------------------------------------------- providers ----
+// Thinking settings tried in this order (the first one a model accepts is remembered):
+// none → minimal → low → the model's default.
+const THINK_CFGS = [{ thinkingBudget: 0 }, { thinkingLevel: 'minimal' }, { thinkingLevel: 'low' }, null];
 
-function geminiThinking(model) {
-  if (/^gemini-2\.5/.test(model)) return { thinkingBudget: 0 };
-  if (/lite/.test(model)) return { thinkingLevel: 'minimal' };
-  return { thinkingLevel: 'low' };
-}
-
-async function geminiRequest(model, system, turns, maxTokens, thinking, timeoutMs) {
+async function geminiStream(model, system, turns, o, onText) {
   const url =
-    'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
-  const generationConfig = { maxOutputTokens: maxTokens, temperature: 0.6 };
-  if (thinking) generationConfig.thinkingConfig = thinking;
-  const { r, data } = await fetchJson(
-    url,
-    {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': envKey('GEMINI_API_KEY') },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: system }] },
-        contents: turns.map((t) => ({
-          role: t.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: t.content }],
-        })),
-        generationConfig,
-      }),
-    },
-    timeoutMs
-  );
-  if (!r.ok) throw new UpstreamError(r.status, errorMessage(data, r));
-  const cand = data && data.candidates && data.candidates[0];
-  const text = ((cand && cand.content && cand.content.parts) || [])
-    .filter((p) => !p.thought)
-    .map((p) => p.text || '')
-    .join('');
-  if (!text.trim()) {
-    const why = (cand && cand.finishReason) || (data && data.promptFeedback && data.promptFeedback.blockReason) || 'unknown';
-    throw new UpstreamError(502, 'empty reply (' + why + ')');
-  }
-  return text;
-}
-
-// Current Gemini models always "think" a little before answering and that
-// counts against the output budget. Ask for the lightest thinking level; if the
-// model rejects that option or still runs out of room, retry once without it
-// and with a larger budget.
-async function callGemini(model, system, turns, o) {
-  try {
-    return await geminiRequest(model, system, turns, (o.maxTokens || MAX_OUTPUT_TOKENS) + 1024, geminiThinking(model), o.timeoutMs);
-  } catch (err) {
-    const msg = String((err && err.message) || '').toLowerCase();
-    const optionRejected = err && err.status === 400 && /think/.test(msg);
-    const ranOutOfRoom = /max_tokens|empty reply \(max/.test(msg);
-    if (!optionRejected && !ranOutOfRoom) throw err;
-    return await geminiRequest(model, system, turns, 4096, null, o.timeoutMs);
+    'https://generativelanguage.googleapis.com/v1beta/models/' +
+    encodeURIComponent(model) +
+    ':streamGenerateContent?alt=sse';
+  let idx = THINK_OK.has(model) ? THINK_OK.get(model) : 0;
+  let bigBudget = false, loops = 0;
+  for (;;) {
+    if (++loops > 6) throw new UpstreamError(502, 'no usable thinking setting');
+    const cfg = THINK_CFGS[idx];
+    const generationConfig = {
+      maxOutputTokens: (o.maxTokens || MAX_OUTPUT_TOKENS) + (cfg && cfg.thinkingBudget === 0 ? 0 : (bigBudget ? 4000 : 1200)),
+      temperature: 0.6,
+    };
+    if (cfg) generationConfig.thinkingConfig = cfg;
+    let text = '';
+    let why = '';
+    try {
+      await streamRequest(
+        url,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-goog-api-key': envKey('GEMINI_API_KEY') },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: system }] },
+            contents: turns.map((t) => ({ role: t.role === 'assistant' ? 'model' : 'user', parts: [{ text: t.content }] })),
+            generationConfig,
+          }),
+        },
+        o.t,
+        (d, firstWord) => {
+          let j;
+          try { j = JSON.parse(d); } catch (e) { return; }
+          if (j.error) throw new UpstreamError(j.error.code || 502, j.error.message || 'stream error');
+          const c = j.candidates && j.candidates[0];
+          if (c && c.finishReason && c.finishReason !== 'STOP') why = c.finishReason;
+          if (j.promptFeedback && j.promptFeedback.blockReason) why = j.promptFeedback.blockReason;
+          const piece = ((c && c.content && c.content.parts) || []).filter((p) => !p.thought).map((p) => p.text || '').join('');
+          if (piece) {
+            firstWord();
+            text += piece;
+            onText(piece);
+          }
+        }
+      );
+    } catch (err) {
+      const msg = String((err && err.message) || '').toLowerCase();
+      // this thinking setting is not accepted by this model -> try the next one
+      if (!text && err && err.status === 400 && /think/.test(msg) && idx < THINK_CFGS.length - 1) {
+        idx += 1;
+        continue;
+      }
+      if (text) return text;           // part of the answer is already on its way: keep it
+      throw err;
+    }
+    if (!text.trim()) {
+      if (why === 'MAX_TOKENS' && !bigBudget && !(cfg && cfg.thinkingBudget === 0)) {
+        bigBudget = true; // the model's thinking used the whole budget: once more with more room
+        continue;
+      }
+      throw new UpstreamError(502, 'empty reply (' + (why || 'unknown') + ')');
+    }
+    THINK_OK.set(model, idx);
+    return text;
   }
 }
 
@@ -956,49 +1027,75 @@ function openAIExtras(model) {
   return {};
 }
 
-async function openAIRequest(cfg, model, system, turns, o, extras) {
-  const body = Object.assign(
-    {
-      model,
-      messages: [{ role: 'system', content: system }].concat(
-        turns.map((t) => ({ role: t.role === 'assistant' ? 'assistant' : 'user', content: t.content }))
-      ),
-      max_tokens: (o.maxTokens || MAX_OUTPUT_TOKENS) + 512,
-      temperature: 0.6,
-    },
-    extras || {}
-  );
-  const { r, data } = await fetchJson(
-    cfg.url,
-    {
-      method: 'POST',
-      headers: Object.assign(
-        { 'content-type': 'application/json', authorization: 'Bearer ' + envKey(cfg.keyEnv) },
-        cfg.extraHeaders || {}
-      ),
-      body: JSON.stringify(body),
-    },
-    o.timeoutMs
-  );
-  if (!r.ok) throw new UpstreamError(r.status, errorMessage(data, r));
-  const msg = data && data.choices && data.choices[0] && data.choices[0].message;
-  let text = (msg && msg.content) || '';
-  text = String(text).replace(/<think>[\s\S]*?<\/think>/g, '').replace(/^[\s\S]*<\/think>/, '').trim();
-  if (!text) throw new UpstreamError(502, 'empty reply');
-  return text;
-}
-
-async function callOpenAICompatible(cfg, model, system, turns, o) {
-  const extras = openAIExtras(model);
-  try {
-    return await openAIRequest(cfg, model, system, turns, o, extras);
-  } catch (err) {
-    const msg = String((err && err.message) || '').toLowerCase();
-    const paramRejected =
-      err && err.status === 400 && Object.keys(extras).length && /reason|unsupported|not supported|unknown/.test(msg);
-    if (!paramRejected) throw err;
-    return await openAIRequest(cfg, model, system, turns, o, {});
+async function openAIStream(cfg, model, system, turns, o, onText) {
+  let extras = openAIExtras(model);
+  for (let round = 0; round < 2; round++) {
+    let text = '';
+    let inThink = false;
+    try {
+      await streamRequest(
+        cfg.url,
+        {
+          method: 'POST',
+          headers: Object.assign(
+            { 'content-type': 'application/json', authorization: 'Bearer ' + envKey(cfg.keyEnv) },
+            cfg.extraHeaders || {}
+          ),
+          body: JSON.stringify(
+            Object.assign(
+              {
+                model,
+                stream: true,
+                messages: [{ role: 'system', content: system }].concat(
+                  turns.map((t) => ({ role: t.role === 'assistant' ? 'assistant' : 'user', content: t.content }))
+                ),
+                max_tokens: (o.maxTokens || MAX_OUTPUT_TOKENS) + 600,
+                temperature: 0.6,
+              },
+              extras
+            )
+          ),
+        },
+        o.t,
+        (d, firstWord) => {
+          let j;
+          try { j = JSON.parse(d); } catch (e) { return; }
+          if (j.error) throw new UpstreamError(j.error.code || 502, j.error.message || 'stream error');
+          let piece = (j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content) || '';
+          // drop any <think>…</think> text a model may send
+          let out = '';
+          while (piece) {
+            if (inThink) {
+              const e = piece.indexOf('</think>');
+              if (e === -1) { piece = ''; break; }
+              piece = piece.slice(e + 8); inThink = false;
+            } else {
+              const s = piece.indexOf('<think>');
+              if (s === -1) { out += piece; piece = ''; break; }
+              out += piece.slice(0, s); piece = piece.slice(s + 7); inThink = true;
+            }
+          }
+          if (!text) out = out.replace(/^\s+/, '');
+          if (out) {
+            firstWord();
+            text += out;
+            onText(out);
+          }
+        }
+      );
+    } catch (err) {
+      const msg = String((err && err.message) || '').toLowerCase();
+      if (!text && round === 0 && err && err.status === 400 && Object.keys(extras).length && /reason|unsupported|not supported|unknown|include/.test(msg)) {
+        extras = {};
+        continue;
+      }
+      if (text) return text;
+      throw err;
+    }
+    if (!text.trim()) throw new UpstreamError(502, 'empty reply');
+    return text;
   }
+  throw new UpstreamError(502, 'empty reply');
 }
 
 const GROQ = { url: 'https://api.groq.com/openai/v1/chat/completions', keyEnv: 'GROQ_API_KEY' };
@@ -1013,25 +1110,29 @@ function buildAttempts() {
   const attempts = [];
   if (envKey('GEMINI_API_KEY')) {
     for (const m of GEMINI_MODELS) {
-      attempts.push({ provider: 'gemini', model: m, compact: false, run: (s, t, o) => callGemini(m, s, t, o) });
+      attempts.push({ provider: 'gemini', model: m, budget: GEMINI_TOKENS, fullCore: true,
+        run: (s, t, o, cb) => geminiStream(m, s, t, o, cb) });
     }
   }
   if (envKey('GROQ_API_KEY')) {
     for (const m of GROQ_MODELS) {
-      attempts.push({ provider: 'groq', model: m, compact: true, run: (s, t, o) => callOpenAICompatible(GROQ, m, s, t, o) });
+      attempts.push({ provider: 'groq', model: m, budget: COMPACT_TOKENS, fullCore: false,
+        run: (s, t, o, cb) => openAIStream(GROQ, m, s, t, o, cb) });
     }
   }
   if (envKey('OPENROUTER_API_KEY')) {
     for (const m of OPENROUTER_MODELS) {
-      attempts.push({
-        provider: 'openrouter',
-        model: m,
-        compact: true,
-        run: (s, t, o) => callOpenAICompatible(OPENROUTER, m, s, t, o),
-      });
+      attempts.push({ provider: 'openrouter', model: m, budget: COMPACT_TOKENS, fullCore: false,
+        run: (s, t, o, cb) => openAIStream(OPENROUTER, m, s, t, o, cb) });
     }
   }
-  return attempts;
+  const id = (a) => a.provider + '/' + a.model;
+  const now = Date.now();
+  // the model that answered last time goes first; models cooling down go last
+  return attempts
+    .map((a, i) => ({ a, i, cool: (COOLDOWN.get(id(a)) || 0) > now, pref: id(a) === PREFERRED }))
+    .sort((x, y) => (x.cool - y.cool) || (y.pref - x.pref) || (x.i - y.i))
+    .map((x) => x.a);
 }
 
 // a bad/blocked key fails the same way for every model of that provider
@@ -1045,8 +1146,16 @@ const tooLarge = (err) =>
   /too large|tokens per minute|\btpm\b|context length|context_length|reduce the length|maximum context/i.test(
     String((err && err.message) || '')
   );
+function coolDownFor(err) {
+  const m = String((err && err.message) || '').toLowerCase();
+  if (err && err.status === 404) return 60 * 60 * 1000;                       // model not available: an hour
+  if (err && (err.status === 429 || /quota|rate limit|resource_exhausted/.test(m))) return 90 * 1000;
+  if (err && (err.status === 503 || err.status === 504 || /overloaded|unavailable|timeout|too long|no answer/.test(m))) return 45 * 1000;
+  return 0;
+}
 
-async function generate(turns, opts) {
+// Streams the answer through onText(piece); returns { text, provider, model, ms, firstMs }.
+async function generate(turns, opts, onText) {
   const o = opts || {};
   const started = Date.now();
   const attempts = buildAttempts();
@@ -1058,40 +1167,52 @@ async function generate(turns, opts) {
   }
   const failures = [];
   const dead = new Set();
+  let firstMs = 0;
+  const cb = (piece) => {
+    if (!firstMs) firstMs = Date.now() - started;
+    if (onText) onText(piece);
+  };
   for (const a of attempts) {
     if (dead.has(a.provider)) continue;
     const left = DEADLINE_MS - (Date.now() - started);
-    if (left < 5000) {
+    if (left < 4000) {
       failures.push('stopped: time budget used up');
       break;
     }
-    const timeoutMs = Math.min(ATTEMPT_TIMEOUT_MS, left - 1500);
-    const system = o.system || (a.compact ? compactPrompt(turns, COMPACT_TOKENS) : SYSTEM_PROMPT);
+    const t = { firstMs: Math.min(o.firstMs || FIRST_WORD_MS, left - 1500), totalMs: left - 1000 };
+    const id = a.provider + '/' + a.model;
+    const system = o.system || sizedPrompt(turns, a.budget, a.fullCore);
     try {
-      const text = await a.run(system, turns, { timeoutMs, maxTokens: o.maxTokens });
-      return { text, provider: a.provider, model: a.model, ms: Date.now() - started };
+      const text = await a.run(system, turns, { t, maxTokens: o.maxTokens }, cb);
+      PREFERRED = id;
+      COOLDOWN.delete(id);
+      return { text, provider: a.provider, model: a.model, ms: Date.now() - started, firstMs };
     } catch (err) {
-      if (!o.system && a.compact && tooLarge(err)) {
-        // retry the same model once with an even smaller prompt
-        try {
-          const text = await a.run(compactPrompt(turns, TINY_TOKENS), turns, {
-            timeoutMs: Math.min(ATTEMPT_TIMEOUT_MS, DEADLINE_MS - (Date.now() - started) - 1500),
-            maxTokens: o.maxTokens,
-          });
-          return { text, provider: a.provider, model: a.model, ms: Date.now() - started };
+      let e = err;
+      if (!o.system && a.budget < GEMINI_TOKENS && tooLarge(e)) {
+        try {           // same model once more with an even smaller prompt
+          const text = await a.run(sizedPrompt(turns, TINY_TOKENS, false), turns,
+            { t: { firstMs: t.firstMs, totalMs: Math.max(3000, DEADLINE_MS - (Date.now() - started) - 1000) }, maxTokens: o.maxTokens }, cb);
+          PREFERRED = id;
+          return { text, provider: a.provider, model: a.model, ms: Date.now() - started, firstMs };
         } catch (err2) {
-          err = err2;
+          e = err2;
         }
       }
-      failures.push(a.provider + '/' + a.model + ': ' + redact(err && err.message));
-      if (providerIsDead(err)) dead.add(a.provider);
+      failures.push(id + ': ' + redact(e && e.message));
+      const cd = coolDownFor(e);
+      if (cd) COOLDOWN.set(id, Date.now() + cd);
+      if (PREFERRED === id) PREFERRED = null;
+      if (providerIsDead(e)) dead.add(a.provider);
     }
   }
   throw new UpstreamError(502, failures.join(' | '));
 }
 
 // ----------------------------------------------------------- diagnostics ----
-async function runDiagnostics(full) {
+const TEST_Q = [{ role: 'user', content: 'سلام، برای آشپزخانه‌ی کوچک کدام اسپرسوساز را پیشنهاد می‌کنید؟' }];
+
+async function runDiagnostics(mode) {
   const out = {
     ok: true,
     time: new Date().toISOString(),
@@ -1102,20 +1223,21 @@ async function runDiagnostics(full) {
     },
     prompt: {
       fullChars: SYSTEM_PROMPT.length,
-      fullTokensApprox: approxTokens(SYSTEM_PROMPT),
-      compactTokensApprox: approxTokens(compactPrompt([{ role: 'user', content: 'اسپرسوساز' }], COMPACT_TOKENS)),
+      geminiTokensApprox: approxTokens(sizedPrompt(TEST_Q, GEMINI_TOKENS, true)),
+      compactTokensApprox: approxTokens(compactPrompt(TEST_Q, COMPACT_TOKENS)),
       products: KB.products.length,
     },
+    preferred: PREFERRED,
   };
 
-  if (full) {
-    // the real thing: full advisor prompt, a real customer question
-    const q = [{ role: 'user', content: 'سلام، برای آشپزخانه‌ی کوچک کدام اسپرسوساز را پیشنهاد می‌کنید؟' }];
+  if (mode === 'full') {
+    // the real thing: real advisor prompt, a real customer question
     try {
-      const r = await generate(q);
+      const r = await generate(TEST_Q);
       out.working = true;
       out.answeredBy = r.provider + '/' + r.model;
-      out.ms = r.ms;
+      out.firstWordMs = r.firstMs;
+      out.totalMs = r.ms;
       out.answer = r.text.slice(0, 700);
     } catch (err) {
       out.working = false;
@@ -1124,16 +1246,35 @@ async function runDiagnostics(full) {
     return out;
   }
 
+  if (mode === 'speed') {
+    // time-to-first-word of the first few Gemini models (8 s each at most)
+    out.models = [];
+    const t0 = Date.now();
+    for (const m of GEMINI_MODELS.slice(0, 4)) {
+      if (!envKey('GEMINI_API_KEY') || Date.now() - t0 > 30000) break;
+      const s = Date.now();
+      let first = 0, text = '';
+      try {
+        text = await geminiStream(m, sizedPrompt(TEST_Q, GEMINI_TOKENS, true), TEST_Q,
+          { t: { firstMs: 8000, totalMs: 9000 } }, (p) => { if (!first) first = Date.now() - s; });
+        out.models.push({ model: m, ok: true, firstWordMs: first, totalMs: Date.now() - s, chars: text.length,
+          thinking: JSON.stringify(THINK_CFGS[THINK_OK.get(m)] || 'default') });
+      } catch (err) {
+        out.models.push({ model: m, ok: false, ms: Date.now() - s, error: redact(err && err.message).slice(0, 160) });
+      }
+    }
+    return out;
+  }
+
   // quick check: one tiny request per provider (first model that answers)
   const probe = [{ role: 'user', content: 'سلام' }];
-  const opts = { system: 'فقط بنویس: سلام', maxTokens: 64 };
   out.attempts = [];
   const done = new Set();
   const dead = new Set();
   for (const a of buildAttempts()) {
     if (done.has(a.provider) || dead.has(a.provider)) continue;
     try {
-      const text = await a.run(opts.system, probe, { timeoutMs: 15000, maxTokens: opts.maxTokens });
+      const text = await a.run('فقط بنویس: سلام', probe, { t: { firstMs: 10000, totalMs: 12000 }, maxTokens: 64 }, () => {});
       out.attempts.push({ provider: a.provider, model: a.model, ok: true, sample: text.slice(0, 40) });
       done.add(a.provider);
     } catch (err) {
@@ -1172,6 +1313,12 @@ async function handler(req, res) {
       q = new URLSearchParams();
     }
 
+    // the page pings this when the chat opens, so the function is awake before the first question
+    if (q.has('warm')) {
+      sendJson(res, 200, { ok: true, warm: true });
+      return;
+    }
+
     // /api/chat?models=1 — the authoritative list for this Gemini key
     if (q.has('models')) {
       if (!envKey('GEMINI_API_KEY')) {
@@ -1179,11 +1326,10 @@ async function handler(req, res) {
         return;
       }
       try {
-        const { r, data } = await fetchJson(
-          'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200',
-          { headers: { 'x-goog-api-key': envKey('GEMINI_API_KEY') } },
-          15000
-        );
+        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', {
+          headers: { 'x-goog-api-key': envKey('GEMINI_API_KEY') },
+        });
+        const data = await r.json().catch(() => null);
         sendJson(res, 200, {
           ok: r.ok,
           status: r.status,
@@ -1202,13 +1348,15 @@ async function handler(req, res) {
       sendJson(res, 200, {
         ok: true,
         endpoint: '/api/chat',
+        version: 'v137-stream',
         keysSet: ['GEMINI_API_KEY', 'GROQ_API_KEY', 'OPENROUTER_API_KEY'].filter((k) => envKey(k)),
-        hint: 'add ?diag=1 to test the API key, ?diag=full to test a real answer',
+        hint: 'add ?diag=1 to test the API key, ?diag=full to test a real answer, ?diag=speed for timings',
       });
       return;
     }
     try {
-      sendJson(res, 200, await runDiagnostics(q.get('diag') === 'full'));
+      const mode = q.get('diag') === 'full' ? 'full' : q.get('diag') === 'speed' ? 'speed' : 'quick';
+      sendJson(res, 200, await runDiagnostics(mode));
     } catch (err) {
       sendJson(res, 500, { ok: false, error: redact(err && err.message) });
     }
@@ -1258,37 +1406,37 @@ async function handler(req, res) {
     return;
   }
 
-  let result;
+  // the answer goes out piece by piece as soon as the model starts writing
+  let streaming = false;
+  const onText = (piece) => {
+    if (!streaming) {
+      streaming = true;
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-transform');
+      res.setHeader('X-Accel-Buffering', 'no');
+      if (typeof res.flushHeaders === 'function') res.flushHeaders();
+    }
+    res.write(piece);
+  };
+
   try {
-    result = await generate(turns);
+    await generate(turns, {}, onText);
+    res.end();
   } catch (err) {
+    if (streaming) {           // the reader already has part of the answer
+      res.end();
+      return;
+    }
     const status = (err && err.status) || 502;
     sendJson(res, status === 500 ? 500 : 502, {
       error: status === 500 ? 'server_misconfigured' : 'upstream_error',
       message: redact(err && err.message),
     });
-    return;
   }
-
-  // stream the answer out in small pieces so the bubble fills in progressively.
-  // the typing effect is capped at ~1.2 s so a long answer never runs long.
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-cache, no-transform');
-  res.setHeader('X-Accel-Buffering', 'no');
-  res.setHeader('X-Chat-Model', result.provider + '/' + result.model);
-
-  const text = result.text;
-  const size = 12;
-  const pieces = Math.ceil(text.length / size) || 1;
-  const delay = Math.min(14, Math.floor(1200 / pieces));
-  for (let i = 0; i < text.length; i += size) {
-    res.write(text.slice(i, i + size));
-    if (delay > 0) await new Promise((r) => setTimeout(r, delay));
-  }
-  res.end();
 }
 
 module.exports = handler;
 module.exports.SYSTEM_PROMPT = SYSTEM_PROMPT;
-module.exports._internal = { compactPrompt, relevantProducts, approxTokens, generate, buildAttempts };
+module.exports._internal = { compactPrompt, sizedPrompt, relevantProducts, approxTokens, generate, buildAttempts,
+  state: () => ({ PREFERRED, COOLDOWN: [...COOLDOWN.keys()], THINK_OK: [...THINK_OK.entries()] }) };
