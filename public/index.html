@@ -6756,7 +6756,14 @@
       const sp = document.createElement('span'); sp.className = 'lq-spin'; sp.setAttribute('aria-hidden', 'true');
       im.insertAdjacentElement('afterend', sp); im.insertAdjacentElement('afterend', ov);
       const off = function(){ clearTimeout(im._lqT); box.classList.remove('lq-on'); };
-      im.addEventListener('load', off); im.addEventListener('error', off);
+      im.addEventListener('load', off);
+      // v154: a photo that failed on a shaky line is asked for once more (a fresh request), the preview stays meanwhile
+      im.addEventListener('error', function(){
+        const u = im.getAttribute('src') || '';
+        if (!u || /^(data|blob):/.test(u) || /[?&]r=\d/.test(u)) { off(); return; }
+        clearTimeout(im._lqT); show(im, u);
+        setTimeout(function(){ if (im.getAttribute('src') === u) im.src = u + (u.indexOf('?') < 0 ? '?' : '&') + 'r=1'; }, 1200);
+      });
       return (im._lq = { box:box, ov:ov });
     }
     function onSrc(im){
@@ -6766,13 +6773,16 @@
       clearTimeout(im._lqT);
       im._lqT = setTimeout(function(){
         if (im.getAttribute('src') !== u || (im.complete && im.naturalWidth)) return;   // already there (from the cache)
-        const cs = getComputedStyle(im), ov = p.ov, l = lqOf(u);
-        ov.style.objectFit = cs.objectFit; ov.style.objectPosition = cs.objectPosition;
-        if (im.offsetWidth){ ov.style.left = im.offsetLeft + 'px'; ov.style.top = im.offsetTop + 'px'; ov.style.width = im.offsetWidth + 'px'; ov.style.height = im.offsetHeight + 'px'; }
-        else { ov.style.left = ov.style.top = ''; ov.style.width = ov.style.height = ''; }
-        if (l) ov.src = l; else ov.removeAttribute('src');
-        p.box.classList.add('lq-on');
+        show(im, u);
       }, 80);
+    }
+    function show(im, u){
+      const p = parts(im), cs = getComputedStyle(im), ov = p.ov, l = lqOf(u);
+      ov.style.objectFit = cs.objectFit; ov.style.objectPosition = cs.objectPosition;
+      if (im.offsetWidth){ ov.style.left = im.offsetLeft + 'px'; ov.style.top = im.offsetTop + 'px'; ov.style.width = im.offsetWidth + 'px'; ov.style.height = im.offsetHeight + 'px'; }
+      else { ov.style.left = ov.style.top = ''; ov.style.width = ov.style.height = ''; }
+      if (l) ov.src = l; else ov.removeAttribute('src');
+      p.box.classList.add('lq-on');
     }
     const mo = new MutationObserver(function(list){ list.forEach(function(m){ onSrc(m.target); }); });
     document.querySelectorAll('.detail-hero img, .bowl-hero img, .peeler-img-box img').forEach(function(im){
