@@ -1640,6 +1640,12 @@
     border:2px solid rgba(12,34,51,.15); box-shadow:0 3px 10px rgba(12,34,51,.15); transition:transform .2s, border-color .2s, box-shadow .2s; }
   .pattern-swatch-item:hover .pattern-swatch{ transform:scale(1.06); }
   .pattern-swatch-item.active .pattern-swatch{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(201,163,92,.35), 0 3px 10px rgba(12,34,51,.2); }
+  .fruit-row{ gap:8px; }
+  .fruit-row .pattern-swatch{ width:42px; height:42px; }
+  .cap-row{ gap:18px; }
+  .pattern-swatch-item.cap{ display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .cap-label{ font-size:12px; font-weight:600; color:var(--navy-deep); }
+  .pattern-swatch-item.cap.active .cap-label{ color:#a0773a; }
   .sr-label{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 
   /* ===== v122: gold page-turn buttons ===== */
@@ -3320,7 +3326,7 @@
     <div class="detail">
       <div class="detail-hero">
         <button class="back-btn" onclick="goTo('list')" aria-label="فهرست محصولات"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4l8 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v5h3a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <img width="700" height="840" decoding="async" data-src="img/8cdb55bab57f.jpg" alt="کارد و چنگال میوه‌خوری لوکاتلی">
+        <img width="988" height="1192" decoding="async" id="fruitImg" data-src="img/8891ecb00494.jpg" alt="کارد و چنگال میوه‌خوری لوکاتلی">
       </div>
       <div class="detail-body">
         <div class="detail-eyebrow"><b>04</b>سرو و پذیرایی</div>
@@ -3332,9 +3338,49 @@
           <tr><td>تعداد در ست</td><td>12 عددی (6 کارد + 6 چنگال)</td></tr>
           <tr><td>جنس تیغه و دندانه</td><td>استیل ضدزنگ مرغوب</td></tr>
           <tr><td>جنس دسته</td><td>سرامیک (پرسلان)</td></tr>
-          <tr><td>طرح دسته</td><td>سفید صدفی با نقش تزئینی</td></tr>
+          <tr><td>طرح دسته</td><td>12 طرح نقش‌دار روی سفید صدفی</td></tr>
           <tr><td>نوع بسته‌بندی</td><td>جعبه‌ی کادویی با فوم داخلی</td></tr>
         </table>
+
+        <div class="opal-swatch-label">طرح‌ها · <b id="fruitName" class="crescent-name">کلاسیک</b></div>
+        <div class="pattern-row fruit-row">
+          <button class="pattern-swatch-item active" data-key="classic" onclick="selectFruit('classic', this)" aria-label="کلاسیک">
+            <span class="pattern-swatch" style="background-image:url('img/0b96f1c87547.jpg')"></span><span class="sr-label">کلاسیک</span>
+          </button>
+          <button class="pattern-swatch-item" data-key="t6" onclick="selectFruit('t6', this)" aria-label="مدل T6">
+            <span class="pattern-swatch" style="background-image:url('img/9f34faa34aff.jpg')"></span><span class="sr-label">مدل T6</span>
+          </button>
+          <button class="pattern-swatch-item" data-key="t7" onclick="selectFruit('t7', this)" aria-label="مدل T7">
+            <span class="pattern-swatch" style="background-image:url('img/a2d50cf34999.jpg')"></span><span class="sr-label">مدل T7</span>
+          </button>
+          <button class="pattern-swatch-item" data-key="t8" onclick="selectFruit('t8', this)" aria-label="مدل T8">
+            <span class="pattern-swatch" style="background-image:url('img/903ffa9cf3ec.jpg')"></span><span class="sr-label">مدل T8</span>
+          </button>
+          <button class="pattern-swatch-item" data-key="t9" onclick="selectFruit('t9', this)" aria-label="مدل T9">
+            <span class="pattern-swatch" style="background-image:url('img/05f4c7f6dace.jpg')"></span><span class="sr-label">مدل T9</span>
+          </button>
+          <button class="pattern-swatch-item" data-key="t11" onclick="selectFruit('t11', this)" aria-label="مدل T11">
+            <span class="pattern-swatch" style="background-image:url('img/f898a5b0e8b1.jpg')"></span><span class="sr-label">مدل T11</span>
+          </button>
+          <button class="pattern-swatch-item" data-key="t12" onclick="selectFruit('t12', this)" aria-label="مدل T12">
+            <span class="pattern-swatch" style="background-image:url('img/057901ea9b56.jpg')"></span><span class="sr-label">مدل T12</span>
+          </button>
+          <button class="pattern-swatch-item" data-key="t13" onclick="selectFruit('t13', this)" aria-label="مدل T13">
+            <span class="pattern-swatch" style="background-image:url('img/8a603e1052f2.jpg')"></span><span class="sr-label">مدل T13</span>
+          </button>
+          <button class="pattern-swatch-item" data-key="t15" onclick="selectFruit('t15', this)" aria-label="مدل T15">
+            <span class="pattern-swatch" style="background-image:url('img/d3609196c768.jpg')"></span><span class="sr-label">مدل T15</span>
+          </button>
+          <button class="pattern-swatch-item" data-key="t16" onclick="selectFruit('t16', this)" aria-label="مدل T16">
+            <span class="pattern-swatch" style="background-image:url('img/d784e7e675e7.jpg')"></span><span class="sr-label">مدل T16</span>
+          </button>
+          <button class="pattern-swatch-item" data-key="t18" onclick="selectFruit('t18', this)" aria-label="مدل T18">
+            <span class="pattern-swatch" style="background-image:url('img/feaabfc8fae6.jpg')"></span><span class="sr-label">مدل T18</span>
+          </button>
+          <button class="pattern-swatch-item" data-key="t19" onclick="selectFruit('t19', this)" aria-label="مدل T19">
+            <span class="pattern-swatch" style="background-image:url('img/a18512e6e27e.jpg')"></span><span class="sr-label">مدل T19</span>
+          </button>
+        </div>
 
         <div class="detail-cta">
           <button class="cta-primary" onclick="goTo('info-fruitset')" style="flex:1 1 100%;">مشاهده جزئیات</button>
@@ -3361,7 +3407,7 @@
 
         <ul class="info-features">
           <li>تیغه و دندانه از استیل ضدزنگ مرغوب، مقاوم در برابر زنگ‌زدگی</li>
-          <li>دسته‌ی سرامیک پرسلان با نقش تزئینی روی زمینه‌ی سفید صدفی</li>
+          <li>دسته‌ی سرامیک پرسلان با نقش تزئینی روی زمینه‌ی سفید صدفی، در 12 طرح متنوع</li>
           <li>دسته‌ی سرامیکی گرما و سرما را منتقل نمی‌کند و در دست نمی‌لغزد</li>
           <li>مجموعه‌ی ۱۲ پارچه؛ ۶ کارد و ۶ چنگال میوه‌خوری، مناسب پذیرایی ۶ نفره</li>
           <li>جعبه‌ی کادویی با فوم داخلی، مناسب هدیه</li>
@@ -3373,7 +3419,8 @@
           <div class="mini-spec-row"><span class="k">تعداد در ست</span><span class="v">12 عددی (6 کارد + 6 چنگال)</span></div>
           <div class="mini-spec-row"><span class="k">جنس تیغه و دندانه</span><span class="v">استیل ضدزنگ مرغوب</span></div>
           <div class="mini-spec-row"><span class="k">جنس دسته</span><span class="v">سرامیک (پرسلان)</span></div>
-          <div class="mini-spec-row"><span class="k">طرح دسته</span><span class="v">سفید صدفی با نقش تزئینی</span></div>
+          <div class="mini-spec-row"><span class="k">طرح دسته</span><span class="v">12 طرح نقش‌دار روی سفید صدفی</span></div>
+          <div class="mini-spec-row"><span class="k">مدل‌ها</span><span class="v">کلاسیک، T6، T7، T8، T9، T11، T12، T13، T15، T16، T18، T19</span></div>
           <div class="mini-spec-row"><span class="k">کاربرد</span><span class="v">سرو و خوردن میوه</span></div>
           <div class="mini-spec-row"><span class="k">شست‌وشو</span><span class="v">دستی (توصیه‌شده)</span></div>
           <div class="mini-spec-row"><span class="k">نوع بسته‌بندی</span><span class="v">جعبه‌ی کادویی با فوم داخلی</span></div>
@@ -3387,7 +3434,7 @@
     <div class="detail">
       <div class="detail-hero">
         <button class="back-btn" onclick="goTo('list')" aria-label="فهرست محصولات"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4l8 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v5h3a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <img width="1120" height="733" decoding="async" data-src="img/d922f5afb44f.jpg" alt="ست قاشق و چنگال لوکاتلی">
+        <img width="1120" height="733" decoding="async" id="cutleryImg" data-src="img/d922f5afb44f.jpg" alt="ست قاشق و چنگال لوکاتلی">
       </div>
       <div class="detail-body">
         <div class="detail-eyebrow"><b>04</b>سرو و پذیرایی</div>
@@ -3403,6 +3450,19 @@
           <tr><td>طول چنگال</td><td>20 سانتی‌متر</td></tr>
           <tr><td>وزن مجموعه</td><td>600 گرم</td></tr>
         </table>
+
+        <div class="opal-swatch-label">طرح‌ها · <b id="cutleryName" class="crescent-name">طرح 1</b></div>
+        <div class="pattern-row cap-row">
+          <button class="pattern-swatch-item cap active" data-key="d1" onclick="selectCutlery('d1', this)" aria-label="طرح 1">
+            <span class="pattern-swatch" style="background-image:url('img/c42c6027449c.jpg')"></span><span class="cap-label">طرح 1</span>
+          </button>
+          <button class="pattern-swatch-item cap" data-key="d2" onclick="selectCutlery('d2', this)" aria-label="طرح 2">
+            <span class="pattern-swatch" style="background-image:url('img/7aa3abf62dac.jpg')"></span><span class="cap-label">طرح 2</span>
+          </button>
+          <button class="pattern-swatch-item cap" data-key="d3" onclick="selectCutlery('d3', this)" aria-label="طرح 3">
+            <span class="pattern-swatch" style="background-image:url('img/b7197b50c9e1.jpg')"></span><span class="cap-label">طرح 3</span>
+          </button>
+        </div>
 
         <div class="detail-cta">
           <button class="cta-primary" onclick="goTo('info-cutlery')" style="flex:1 1 100%;">مشاهده جزئیات</button>
@@ -3433,6 +3493,7 @@
           <li>مجموعه‌ی ۱۲ پارچه؛ ۶ قاشق و ۶ چنگال غذاخوری، مناسب میز ۶ نفره</li>
           <li>طراحی متعادل و باریک، گرفتنی راحت برای استفاده‌ی روزانه</li>
           <li>مناسب شست‌وشو در ماشین ظرفشویی</li>
+          <li>موجود در 3 طرح دسته</li>
           <li>بسته‌بندی در جعبه‌ی شیک، مناسب هدیه</li>
         </ul>
 
@@ -3441,6 +3502,7 @@
           <div class="mini-spec-row"><span class="k">جنس</span><span class="v">استیل ضدزنگ</span></div>
           <div class="mini-spec-row"><span class="k">تعداد در ست</span><span class="v">12 عددی (6 قاشق + 6 چنگال)</span></div>
           <div class="mini-spec-row"><span class="k">پرداخت</span><span class="v">سر آینه‌ای، دسته ساتن</span></div>
+          <div class="mini-spec-row"><span class="k">طرح‌ها</span><span class="v">طرح 1، طرح 2، طرح 3</span></div>
           <div class="mini-spec-row"><span class="k">طول قاشق</span><span class="v">20 سانتی‌متر</span></div>
           <div class="mini-spec-row"><span class="k">طول چنگال</span><span class="v">20 سانتی‌متر</span></div>
           <div class="mini-spec-row"><span class="k">وزن مجموعه</span><span class="v">600 گرم</span></div>
@@ -6356,13 +6418,13 @@
     pg.querySelectorAll('img[data-src]').forEach(function(im){ im.src = im.getAttribute('data-src'); im.removeAttribute('data-src'); });
   }
   const VARIANTS = { 'detail-opal':'OPAL_IMAGES', 'detail-peeler':'PEELER_IMAGES', 'detail-bowl':'BOWL_IMAGES', 'detail-bowl4':'BOWL4_IMAGES', 'detail-bowlgr':'BOWLGR_IMAGES', 'detail-bowlhd':'BOWLHD_IMAGES',
-                     'detail-glasscontainer':'SQBOX_IMAGES', 'detail-glasscontainer-rect':'RECTBOX_IMAGES', 'detail-scale-crescent':'CRESCENT_IMAGES' };
+                     'detail-glasscontainer':'SQBOX_IMAGES', 'detail-glasscontainer-rect':'RECTBOX_IMAGES', 'detail-scale-crescent':'CRESCENT_IMAGES', 'detail-fruitset':'FRUIT_IMAGES', 'detail-cutlery':'CUTLERY_IMAGES' };
   const VAR_DONE = new Set();
   function prefetchVariants(name){
     const key = VARIANTS[name]; if (!key || VAR_DONE.has(name)) return;
     let map = null;
     try{ map = { OPAL_IMAGES:OPAL_IMAGES, PEELER_IMAGES:PEELER_IMAGES, BOWL_IMAGES:BOWL_IMAGES, BOWL4_IMAGES:BOWL4_IMAGES, BOWLGR_IMAGES:BOWLGR_IMAGES, BOWLHD_IMAGES:BOWLHD_IMAGES,
-                 SQBOX_IMAGES:SQBOX_IMAGES, RECTBOX_IMAGES:RECTBOX_IMAGES, CRESCENT_IMAGES:CRESCENT_IMAGES }[key]; }catch(e){ return; }
+                 SQBOX_IMAGES:SQBOX_IMAGES, RECTBOX_IMAGES:RECTBOX_IMAGES, CRESCENT_IMAGES:CRESCENT_IMAGES, FRUIT_IMAGES:FRUIT_IMAGES, CUTLERY_IMAGES:CUTLERY_IMAGES }[key]; }catch(e){ return; }
     const list = Object.keys(map || {}).map(function(k){ return map[k]; }).filter(function(u){ return u && !/^data:/.test(u); });
     if (!list.length) return;
     VAR_DONE.add(name);
@@ -7134,7 +7196,7 @@
   }
   function orderWA(k){
     const v=pageVariant(k);
-    const vl=/opal|crescent/.test(k)?'طرح':'رنگ';
+    const vl=/opal|crescent|fruitset|cutlery/.test(k)?'طرح':'رنگ';
     const msg='سلام، وقت بخیر. از کاتالوگ لوکاتلی درباره‌ی «'+pageName(k)+'»'+(v?(' ('+vl+': '+v+')'):'')+' سؤال داشتم؛ لطفاً قیمت و شرایط خرید را بفرمایید.';
     openExternal('https://wa.me/'+ORDER_WA+'?text='+encodeURIComponent(msg), {title:'سفارش در واتساپ', name:pageName(k)+(v?(' — '+v):''), number:'09359496659', copyText:msg});
   }
@@ -7578,6 +7640,20 @@
     document.querySelectorAll('#page-detail-scale-crescent .pattern-swatch-item').forEach(b=>b.classList.toggle('active', b===btn));
     const nm=document.getElementById('crescentName'); if(nm && btn) nm.textContent = btn.getAttribute('aria-label') || '';
   }
+  /* cutlery set: designs */
+  const CUTLERY_IMAGES = {};
+  function selectCutlery(key, btn){
+    const im=document.getElementById('cutleryImg'); if(CUTLERY_IMAGES[key]) im.src=CUTLERY_IMAGES[key];
+    document.querySelectorAll('#page-detail-cutlery .pattern-swatch-item').forEach(b=>b.classList.toggle('active', b===btn));
+    const nm=document.getElementById('cutleryName'); if(nm && btn) nm.textContent = btn.getAttribute('aria-label') || '';
+  }
+  /* porcelain fruit cutlery: handle designs */
+  const FRUIT_IMAGES = {};
+  function selectFruit(key, btn){
+    const im=document.getElementById('fruitImg'); if(FRUIT_IMAGES[key]) im.src=FRUIT_IMAGES[key];
+    document.querySelectorAll('#page-detail-fruitset .pattern-swatch-item').forEach(b=>b.classList.toggle('active', b===btn));
+    const nm=document.getElementById('fruitName'); if(nm && btn) nm.textContent = btn.getAttribute('aria-label') || '';
+  }
 </script>
 <script>
 /* product photo variants (swatches) — loaded after the interface is ready */
@@ -7644,6 +7720,8 @@ Object.assign(RECTBOX_IMAGES, {
     white: 'img/ef91e7a34803.jpg'
   });
 Object.assign(CRESCENT_IMAGES, { bw: 'img/41ee6e6fd9b1.jpg', rahrah: 'img/11b1b2e58d4c.jpg', abrobad: 'img/6d0a0ea46096.jpg', golriz: 'img/6368bd2ad85f.jpg', bigflower: 'img/e94951a520a4.jpg' });
+Object.assign(FRUIT_IMAGES, { classic: 'img/8891ecb00494.jpg', t6: 'img/3fe6e18112bd.jpg', t7: 'img/60d957bf7989.jpg', t8: 'img/e7b89f2e78aa.jpg', t9: 'img/ceb29651e513.jpg', t11: 'img/0609a44a6218.jpg', t12: 'img/a0caf1c85a33.jpg', t13: 'img/1e7b122d5e30.jpg', t15: 'img/f40c66580b9c.jpg', t16: 'img/9088a0bdfe68.jpg', t18: 'img/295ce16a6e36.jpg', t19: 'img/b2462291b1ee.jpg' });
+Object.assign(CUTLERY_IMAGES, { d1: 'img/d922f5afb44f.jpg', d2: 'img/ecfe30aff167.jpg', d3: 'img/9a28ebc4220a.jpg' });
 </script>
 
 </body>
