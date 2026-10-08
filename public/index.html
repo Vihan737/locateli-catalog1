@@ -7445,8 +7445,31 @@
     const m = /(?:wa\.me\/|tel:\+?)(\d{8,15})/.exec(u); if(!m) return '';
     let n = m[1]; if (n.indexOf('98') === 0) n = '0' + n.slice(2); return n;
   }
+  /* v155: every WhatsApp message the catalogue opens carries the three price lists (PDF links on this site) */
+  const PRICE_LISTS = [
+    ['لیست قیمت لوکامیکس (پاییز ۱۴۰۵)', 'price-locamix.pdf'],
+    ['لیست قیمت ظروف بروسیل لوکاتلی', 'price-boroseal.pdf'],
+    ['لیست قیمت پک ظروف بروسیل لوکاتلی', 'price-boroseal-pack.pdf'],
+  ];
+  function priceBase(){
+    const h = location.hostname || '';
+    if (/^https?:$/.test(location.protocol) && !/claude|anthropic|usercontent|localhost|127\.0\.0\.1/.test(h)) return location.origin + '/';
+    return 'https://locateli-catalog1-six.vercel.app/';
+  }
+  function priceBlock(){
+    const b = priceBase();
+    return 'لیست قیمت‌ها (برای دیدن روی لینک بزنید):\n' + PRICE_LISTS.map(function(p){ return '• ' + p[0] + '\n' + b + p[1]; }).join('\n');
+  }
+  function withPrices(url, info){
+    const m = /^https:\/\/wa\.me\/(\d{8,15})(?:\?text=(.*))?$/.exec(url); if (!m) return url;
+    let text = m[2] ? decodeURIComponent(m[2]) : 'سلام، وقت بخیر. از کاتالوگ لوکاتلی پیام می‌دهم.';
+    if (text.indexOf('price-locamix.pdf') < 0) text += '\n\n' + priceBlock();
+    if (info) info.copyText = text;
+    return 'https://wa.me/' + m[1] + '?text=' + encodeURIComponent(text);
+  }
   function openExternal(url, info){
     info = info || {};
+    url = withPrices(url, info);
     const number = info.number || numFromUrl(url);
     if (!isFramed()){
       if (/^(tel|mailto):/.test(url)) location.href = url;
