@@ -1628,6 +1628,21 @@
   .cta-wa{ background:rgba(201,163,92,.12); color:var(--navy-deep); border:1px solid rgba(201,163,92,.7); }
   .cta-wa:hover{ background:rgba(201,163,92,.22); }
   .cta-wa svg{ color:#1f9d55; }
+  /* v156: Bale messenger next to WhatsApp */
+  .cta-bale{ flex:0 0 auto; display:flex; align-items:center; justify-content:center; gap:7px;
+    padding:0 14px; border-radius:3px; cursor:pointer; font-family:'Vazirmatn'; font-size:13px; font-weight:600;
+    background:rgba(201,163,92,.12); color:var(--navy-deep); border:1px solid rgba(201,163,92,.7); transition:background .2s, transform .2s; }
+  .cta-bale:hover{ background:rgba(201,163,92,.22); }
+  .cta-bale:active{ transform:scale(.97); }
+  .cta-bale svg{ width:18px; height:18px; flex-shrink:0; color:#0a9a86; }
+  html.mobile .cta-bale{ flex:1 1 0; padding:14px 6px; font-size:13px; }
+  .cf-btn.bale{ background:#0a9a86; }
+  .icon-btn.icon-bale{ color:#0a9a86; }
+  .cta-wa .l-short, .cta-bale .l-short{ display:none; }
+  /* rows that also hold a third action (e.g. "compare models"): short labels so nothing wraps */
+  .detail-cta.cta4 .cta-wa .l-full, .detail-cta.cta4 .cta-bale .l-full{ display:none; }
+  .detail-cta.cta4 .cta-wa .l-short, .detail-cta.cta4 .cta-bale .l-short{ display:inline; }
+  .detail-cta.cta4 .cta-wa, .detail-cta.cta4 .cta-bale{ padding:0 12px; white-space:nowrap; }
 
   /* ===== cover: animated line scene (factory -> rail -> dining table) ===== */
   .cover-scene{ width:440px; height:563px; flex-shrink:0; overflow:visible; margin:-6px 0; }
@@ -1731,6 +1746,10 @@
   .ext-go, .ext-copy{ flex:1; display:flex; align-items:center; justify-content:center; height:46px; border-radius:12px; font-family:inherit; font-size:14.5px; font-weight:700; cursor:pointer; text-decoration:none; }
   .ext-go{ background:#25d366; color:#fff; border:none; }
   .ext-go.tel{ background:#0c2233; }
+  .ext-go.bale{ background:#0a9a86; }
+  .ext-bale-id{ text-align:center; font-size:21px; font-weight:800; color:var(--navy-deep); margin:2px 0 14px; }
+  .ext-bale-id b{ font-weight:900; color:#0a9a86; font-size:23px; }
+  #extOv.bale .ext-note, #extOv.bale #extCopyBtn{ display:none; }
   .ext-copy{ background:linear-gradient(135deg,#e9d39f,#c9a35c 60%,#b08a47); color:#0c2233; border:none; }
 
   /* ===== v132: performance, compatibility and touch comfort ===== */
@@ -1982,6 +2001,7 @@
       <div class="share-title" id="extTitle">تماس</div>
       <div class="share-name" id="extName"></div>
       <a class="ext-num" id="extNum" dir="ltr"></a>
+      <div class="ext-bale-id" id="extBaleId" hidden></div>
       <div class="ext-note">این نمای کاتالوگ اجازه‌ی باز کردن مستقیم برنامه‌ها را نمی‌دهد؛ شماره را کپی کنید یا دکمه‌ی زیر را بزنید.</div>
       <div class="ext-actions">
         <a class="ext-go" id="extGo" target="_top" rel="noopener">باز کردن</a>
@@ -5993,6 +6013,9 @@
             <a class="icon-btn" aria-label="واتساپ امیرهوشنگ وحدتی" href="https://wa.me/989121787393" target="_blank" rel="noopener">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3z" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 8.8c.2-.6.6-.6 1-.6h.5c.2 0 .4 0 .6.5.2.5.7 1.6.7 1.8 0 .1 0 .3-.1.4l-.5.6c-.1.2-.2.3 0 .6.3.5.9 1.2 1.6 1.7.7.6 1 .6 1.3.5.2-.1.5-.5.7-.7.2-.2.3-.2.5-.1l1.4.7c.2.1.4.2.4.4 0 .5-.4 1-.9 1.2-.7.3-1.3.4-2.1.1-1.6-.5-3-1.7-3.9-2.9-.6-.8-1.1-1.7-1.1-2.6 0-.5.2-.9.4-1.1z" fill="currentColor"/></svg>
             </a>
+            <a class="icon-btn icon-bale" aria-label="پیام در بله به امیرهوشنگ وحدتی" href="bale:989121787393">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2c-4.9 0-8.8 3.5-8.8 7.9 0 2.4 1.2 4.6 3.1 6l-.6 3.6 3.6-2c.9.2 1.8.3 2.7.3 4.9 0 8.8-3.5 8.8-7.9S16.9 3.2 12 3.2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.2 11.4l2.5 2.4 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
             <a class="icon-btn" aria-label="تماس با امیرهوشنگ وحدتی" href="tel:+989121787393">
               <svg viewBox="0 0 24 24" fill="none"><path d="M6.6 10.8c1.4 2.7 3.9 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C11.6 21 3 12.4 3 2c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1l-2.2 2.2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
             </a>
@@ -6012,6 +6035,9 @@
             <a class="icon-btn" aria-label="واتساپ علی میرقاسمی" href="https://wa.me/989123351656" target="_blank" rel="noopener">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3z" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 8.8c.2-.6.6-.6 1-.6h.5c.2 0 .4 0 .6.5.2.5.7 1.6.7 1.8 0 .1 0 .3-.1.4l-.5.6c-.1.2-.2.3 0 .6.3.5.9 1.2 1.6 1.7.7.6 1 .6 1.3.5.2-.1.5-.5.7-.7.2-.2.3-.2.5-.1l1.4.7c.2.1.4.2.4.4 0 .5-.4 1-.9 1.2-.7.3-1.3.4-2.1.1-1.6-.5-3-1.7-3.9-2.9-.6-.8-1.1-1.7-1.1-2.6 0-.5.2-.9.4-1.1z" fill="currentColor"/></svg>
             </a>
+            <a class="icon-btn icon-bale" aria-label="پیام در بله به علی میرقاسمی" href="bale:989123351656">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2c-4.9 0-8.8 3.5-8.8 7.9 0 2.4 1.2 4.6 3.1 6l-.6 3.6 3.6-2c.9.2 1.8.3 2.7.3 4.9 0 8.8-3.5 8.8-7.9S16.9 3.2 12 3.2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.2 11.4l2.5 2.4 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
             <a class="icon-btn" aria-label="تماس با علی میرقاسمی" href="tel:+989123351656">
               <svg viewBox="0 0 24 24" fill="none"><path d="M6.6 10.8c1.4 2.7 3.9 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C11.6 21 3 12.4 3 2c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1l-2.2 2.2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
             </a>
@@ -6022,6 +6048,9 @@
           <span class="contact-icons">
             <a class="icon-btn" aria-label="واتساپ ویهان وحدتی" href="https://wa.me/989359496659" target="_blank" rel="noopener">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3z" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 8.8c.2-.6.6-.6 1-.6h.5c.2 0 .4 0 .6.5.2.5.7 1.6.7 1.8 0 .1 0 .3-.1.4l-.5.6c-.1.2-.2.3 0 .6.3.5.9 1.2 1.6 1.7.7.6 1 .6 1.3.5.2-.1.5-.5.7-.7.2-.2.3-.2.5-.1l1.4.7c.2.1.4.2.4.4 0 .5-.4 1-.9 1.2-.7.3-1.3.4-2.1.1-1.6-.5-3-1.7-3.9-2.9-.6-.8-1.1-1.7-1.1-2.6 0-.5.2-.9.4-1.1z" fill="currentColor"/></svg>
+            </a>
+            <a class="icon-btn icon-bale" aria-label="پیام در بله به ویهان وحدتی" href="bale:989359496659">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2c-4.9 0-8.8 3.5-8.8 7.9 0 2.4 1.2 4.6 3.1 6l-.6 3.6 3.6-2c.9.2 1.8.3 2.7.3 4.9 0 8.8-3.5 8.8-7.9S16.9 3.2 12 3.2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.2 11.4l2.5 2.4 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
             <a class="icon-btn" aria-label="تماس با ویهان وحدتی" href="tel:+989359496659">
               <svg viewBox="0 0 24 24" fill="none"><path d="M6.6 10.8c1.4 2.7 3.9 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C11.6 21 3 12.4 3 2c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1l-2.2 2.2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
@@ -7323,6 +7352,13 @@
     const msg='سلام، وقت بخیر. از کاتالوگ لوکاتلی درباره‌ی «'+pageName(k)+'»'+(v?(' ('+vl+': '+v+')'):'')+' سؤال داشتم؛ لطفاً قیمت و شرایط خرید را بفرمایید.';
     openExternal('https://wa.me/'+ORDER_WA+'?text='+encodeURIComponent(msg), {title:'سفارش در واتساپ', name:pageName(k)+(v?(' — '+v):''), number:'09359496659', copyText:msg});
   }
+  const BALE_ICON = '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2c-4.9 0-8.8 3.5-8.8 7.9 0 2.4 1.2 4.6 3.1 6l-.6 3.6 3.6-2c.9.2 1.8.3 2.7.3 4.9 0 8.8-3.5 8.8-7.9S16.9 3.2 12 3.2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.2 11.4l2.5 2.4 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function orderBale(k){
+    const v=pageVariant(k);
+    const vl=/opal|crescent|fruitset|cutlery/.test(k)?'طرح':'رنگ';
+    const msg='سلام، وقت بخیر. از کاتالوگ لوکاتلی درباره‌ی «'+pageName(k)+'»'+(v?(' ('+vl+': '+v+')'):'')+' سؤال داشتم؛ لطفاً قیمت و شرایط خرید را بفرمایید.';
+    openBale(ORDER_WA, {title:'پیام در بله', name:pageName(k)+(v?(' — '+v):''), text:msg});
+  }
   function shareBase(){
     const h=location.hostname||'';
     if(/^https?:$/.test(location.protocol) && !/claude|anthropic|usercontent/.test(h)) return location.origin+location.pathname;
@@ -7358,9 +7394,14 @@
       const cta=pg.querySelector('.detail-cta');
       if(cta && !cta.querySelector('.cta-wa')){
         const b=document.createElement('button'); b.className='cta-wa'; b.type='button';
-        b.innerHTML=WA_ICON+'<span>سفارش در واتساپ</span>'; b.setAttribute('aria-label','سفارش در واتساپ');
+        b.innerHTML=WA_ICON+'<span class="l-full">سفارش در واتساپ</span><span class="l-short">واتساپ</span>'; b.setAttribute('aria-label','سفارش در واتساپ');
         b.onclick=function(){ orderWA(k); };
         cta.insertBefore(b, cta.firstChild);
+        const bb=document.createElement('button'); bb.className='cta-bale'; bb.type='button';
+        bb.innerHTML=BALE_ICON+'<span class="l-full">پیام در بله</span><span class="l-short">بله</span>'; bb.setAttribute('aria-label','پیام در بله');
+        bb.onclick=function(){ orderBale(k); };
+        b.after(bb);
+        if (cta.querySelector('.cta-ghost')) cta.classList.add('cta4');
       }
       const hero=pg.querySelector('.detail > div'); 
       if(hero && !hero.querySelector('.share-btn')){
@@ -7485,6 +7526,10 @@
   }
   function showExt(url, info, number){
     const isTel = /^tel:/.test(url);
+    BALE_MODE = false;
+    { const note = document.querySelector('#extOv .ext-note'); if (note) note.textContent = EXT_NOTE;
+      document.getElementById('extGo').classList.remove('bale'); document.getElementById('extGo').target = '_top';
+      document.getElementById('extOv').classList.remove('bale'); document.getElementById('extBaleId').hidden = true; }
     EXT_CUR = { text: info.copyText ? (info.copyText + '\n' + number) : number };
     document.getElementById('extTitle').textContent = info.title || (isTel ? 'تماس تلفنی' : 'واتساپ');
     document.getElementById('extName').textContent = info.name || '';
@@ -7496,10 +7541,53 @@
     document.getElementById('extOv').classList.add('open');
     if (window.syncBack) setTimeout(syncBack, 0);
   }
+  /* v156: Bale (بله). Bale has no "open a chat with this text" link like wa.me?text=,
+     so the sheet copies the message (with the price lists) and then opens Bale. */
+  const BALE_ID = { '989359496659':'locacenter', '989121787393':'', '989123351656':'' };   // Bale usernames, when known
+  const EXT_NOTE = 'این نمای کاتالوگ اجازه‌ی باز کردن مستقیم برنامه‌ها را نمی‌دهد؛ شماره را کپی کنید یا دکمه‌ی زیر را بزنید.';
+  let BALE_MODE = false;
+  function baleUrl(n){ const id = BALE_ID[n]; return id ? 'https://ble.ir/' + id : 'https://web.bale.ai/'; }
+  function openBale(n, info){
+    info = info || {};
+    let n0 = n.indexOf('98') === 0 ? '0' + n.slice(2) : n;
+    const text = (info.text || 'سلام، وقت بخیر. از کاتالوگ لوکاتلی پیام می‌دهم.') + '\n\n' + priceBlock();
+    BALE_MODE = true;
+    EXT_CUR = { text: text, bale: true };
+    document.getElementById('extTitle').textContent = info.title || 'پیام در بله';
+    document.getElementById('extName').textContent = info.name || '';
+    const num = document.getElementById('extNum'); num.textContent = n0; num.href = 'tel:' + n0;
+    const bid = document.getElementById('extBaleId');
+    if (BALE_ID[n]){ bid.innerHTML = 'آیدی بله: <b dir="ltr">' + BALE_ID[n] + '</b>'; bid.hidden = false; } else bid.hidden = true;
+    document.getElementById('extOv').classList.add('bale');
+    const note = document.querySelector('#extOv .ext-note');
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (note) note.textContent = (ios && BALE_ID[n])
+      ? 'در آیفون، بله نسخه‌ی وب است و لینک در سافاری باز می‌شود. اگر بله را روی صفحه‌ی اصلی گوشی دارید: متن را کپی کنید، بله را باز کنید، آیدی ' + BALE_ID[n] + ' را جستجو کنید و متن را بچسبانید.'
+      : BALE_ID[n]
+      ? 'متن پیام همراه با لیست قیمت‌ها کپی می‌شود؛ در گفت‌وگوی بله که باز می‌شود آن را بچسبانید و بفرستید.'
+      : 'متن پیام همراه با لیست قیمت‌ها کپی می‌شود؛ در بله شماره‌ی بالا را پیدا کنید و متن را در گفت‌وگو بچسبانید.';
+    const go = document.getElementById('extGo'); go.href = baleUrl(n); go.classList.remove('tel'); go.classList.add('bale'); go.target = isFramed() ? '_top' : '_blank';
+    go.textContent = 'کپی متن و باز کردن در بله';
+    document.getElementById('extCopy').value = text;
+    const cb = document.getElementById('extCopyBtn'); if (cb) cb.textContent = ios ? 'کپی متن' : 'فقط کپی متن';
+    document.getElementById('extOv').classList.add('open');
+    if (window.syncBack) setTimeout(syncBack, 0);
+  }
+  document.querySelectorAll('a[href^="bale:"]').forEach(function(a){ if (!BALE_ID[a.getAttribute('href').slice(5)]) a.style.display = 'none'; });
+  function copyNow(t){                       // synchronous copy, so the same tap can still open Bale
+    let ok = false;
+    try{ const i = document.getElementById('extCopy'); i.value = t; i.focus(); i.select(); i.setSelectionRange(0, 99999); ok = document.execCommand('copy'); i.blur(); }catch(e){}
+    try{ if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).catch(function(){}); ok = ok || !!navigator.clipboard; }catch(e){}
+    return ok;
+  }
+  document.addEventListener('click', function(e){
+    const go = e.target.closest && e.target.closest('#extGo'); if (!go || !BALE_MODE || !EXT_CUR) return;
+    copyNow(EXT_CUR.text); toast('متن پیام کپی شد؛ در بله بچسبانید');
+  }, true);
   function closeExt(){ document.getElementById('extOv').classList.remove('open'); if (window.syncBack) setTimeout(syncBack, 0); }
   function copyExt(){
     if (!EXT_CUR) return;
-    const done = ()=>toast(/\n/.test(EXT_CUR.text) ? 'متن سفارش و شماره کپی شد' : 'شماره کپی شد');
+    const done = ()=>toast(EXT_CUR.bale ? 'متن پیام کپی شد؛ در بله بچسبانید' : (/\n/.test(EXT_CUR.text) ? 'متن سفارش و شماره کپی شد' : 'شماره کپی شد'));
     const legacy = ()=>{ const i = document.getElementById('extCopy'); i.focus(); i.select(); i.setSelectionRange(0, 9999);
       let ok = false; try{ ok = document.execCommand('copy'); }catch(e){} ok ? done() : toast('از کادر پایین کپی کنید'); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(EXT_CUR.text).then(done, legacy); else legacy();
@@ -7509,6 +7597,12 @@
     const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
     if (a.id === 'extGo' || a.dataset.raw) return;                     // the sheet's own button: let the browser try natively
     const href = a.getAttribute('href') || '';
+    if (/^bale:\d+$/.test(href)){
+      e.preventDefault();
+      const row0 = a.closest('.contact-row'); const nm0 = row0 && row0.querySelector('.contact-label b');
+      openBale(href.slice(5), { name: nm0 ? nm0.textContent : 'لوکاتلی' });
+      return;
+    }
     if (!/^(https:\/\/(wa\.me|t\.me)\/|tel:)/.test(href)) return;
     if (!isFramed() && /^tel:/.test(href)) return;     // own site: native behaviour
     e.preventDefault();
