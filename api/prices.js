@@ -11,7 +11,7 @@ const SHEET_ID = process.env.PRICE_SHEET_ID || '1Q1uM1Se7qQhALqMKdFv_6VeJWxxe3bJ
 
 const TABS = { kitchen: 'آشپزخانه', metal: 'فلزی' };
 const COLS = { group: 'گروه', name: 'نام کالا', detail: 'جزئیات', colors: 'رنگ‌بندی',
-  price: 'قیمت نهایی', unit: 'واحد قیمت پایه', img: 'کد عکس', show: 'نمایش در سایت' };
+  price: 'قیمت نهایی', unit: 'واحد', img: 'کد عکس', show: 'نمایش در سایت' };
 
 function parseCSV(text) {
   const rows = []; let row = [], cell = '', q = false;
@@ -56,7 +56,8 @@ module.exports = async function handler(req, res) {
     for (const k in COLS) {
       const want = norm(COLS[k]);
       idx[k] = head.indexOf(want);
-      if (idx[k] < 0 && k === 'price') idx[k] = head.findIndex((h) => h.startsWith(want));
+      if (idx[k] < 0 && k === 'price') idx[k] = head.findIndex((h) => h.includes('نهایی'));
+      if (idx[k] < 0 && k === 'unit') idx[k] = head.findIndex((h) => h.includes('واحد'));
     }
     // when the final-price header says «تومان», prices are already converted to toman
     const priceInToman = idx.price >= 0 && head[idx.price].includes('تومان');
@@ -65,7 +66,7 @@ module.exports = async function handler(req, res) {
     const rows = table
       .filter((row) => get(row, 'name') && get(row, 'show') !== 'خیر')
       .map((row) => ({ group: get(row, 'group'), name: get(row, 'name'), detail: get(row, 'detail'),
-        colors: get(row, 'colors'), price: toNumber(get(row, 'price')), unit: (priceInToman && /ریال/.test(get(row, 'unit'))) ? 'تومان' : get(row, 'unit'),
+        colors: get(row, 'colors'), price: toNumber(get(row, 'price')), unit: priceInToman ? 'تومان' : get(row, 'unit'),
         img: get(row, 'img').replace(/[^0-9a-f]/gi, '') }));
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
     res.status(200).json({ list, source: 'sheet', fetched: new Date().toISOString(), rows });
