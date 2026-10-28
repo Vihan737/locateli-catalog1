@@ -6,6 +6,15 @@
   },
   "headers": [
     {
+      "source": "/prices-(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
       "source": "/img/(.*)",
       "headers": [
         {
@@ -62,6 +71,63 @@
           "value": "strict-origin-when-cross-origin"
         }
       ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/price-locamix.pdf",
+      "destination": "/prices-kitchen.html",
+      "permanent": false
+    },
+    {
+      "source": "/price-locamix%20%283%29.pdf",
+      "destination": "/prices-kitchen.html",
+      "permanent": false
+    },
+    {
+      "source": "/prices-locamix.html",
+      "destination": "/prices-kitchen.html",
+      "permanent": false
+    },
+    {
+      "source": "/price-kitchen.pdf",
+      "destination": "/prices-kitchen.html",
+      "permanent": false
+    },
+    {
+      "source": "/price-boroseal.pdf",
+      "destination": "/prices-kitchen.html",
+      "permanent": false
+    },
+    {
+      "source": "/price-boroseal-pack.pdf",
+      "destination": "/prices-kitchen.html",
+      "permanent": false
+    },
+    {
+      "source": "/prices-boroseal.html",
+      "destination": "/prices-kitchen.html",
+      "permanent": false
+    },
+    {
+      "source": "/prices-boroseal-pack.html",
+      "destination": "/prices-kitchen.html",
+      "permanent": false
+    },
+    {
+      "source": "/%D9%84%DB%8C%D8%B3%D8%AA%20%D9%82%DB%8C%D9%85%D8%AA%20%D9%85%D8%AD%D8%B5%D9%88%D9%84%D8%A7%D8%AA%20%D8%A2%D8%B4%D9%BE%D8%B2%D8%AE%D8%A7%D9%86%D9%87%20%D9%84%D9%88%DA%A9%D8%A7%D8%AA%D9%84%DB%8C.pdf",
+      "destination": "/prices-kitchen.html",
+      "permanent": false
+    },
+    {
+      "source": "/price-metal.pdf",
+      "destination": "/prices-metal.html",
+      "permanent": false
+    },
+    {
+      "source": "/%D9%84%DB%8C%D8%B3%D8%AA%20%D9%82%DB%8C%D9%85%D8%AA%20%D9%85%D8%AD%D8%B5%D9%88%D9%84%D8%A7%D8%AA%20%D9%81%D9%84%D8%B2%DB%8C%20%D9%84%D9%88%DA%A9%D8%A7%D8%AA%D9%84%DB%8C.pdf",
+      "destination": "/prices-metal.html",
+      "permanent": false
     }
   ]
 }
