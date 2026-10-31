@@ -9,7 +9,7 @@
 // The sheet must be shared as «Anyone with the link → Viewer».
 const SHEET_ID = process.env.PRICE_SHEET_ID || '1Q1uM1Se7qQhALqMKdFv_6VeJWxxe3bJiq8ztb3DlB0M';
 
-const TABS = { kitchen: 'آشپزخانه', metal: 'فلزی' };
+const TABS = { kitchen: 'آشپزخانه', metal: 'فلزی', electric: 'برقی' };
 const COLS = { group: 'گروه', name: 'نام کالا', detail: 'جزئیات', colors: 'رنگ‌بندی',
   price: 'قیمت نهایی', unit: 'واحد', img: 'کد عکس', show: 'نمایش در سایت' };
 
@@ -34,7 +34,7 @@ function parseCSV(text) {
 const norm = (s) => String(s || '').replace(/[‌\s]+/g, ' ').trim();
 const toNumber = (s) => {
   const t = String(s || '').replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^\d.]/g, '');
-  const n = Math.round(parseFloat(t)); return isFinite(n) && n > 0 ? n : null;
+  const n = Math.round(parseFloat(t)); return isFinite(n) && n >= 0 ? n : null; // 0 = out of stock
 };
 
 module.exports = async function handler(req, res) {
