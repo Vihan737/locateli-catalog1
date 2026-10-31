@@ -7490,8 +7490,9 @@
   const PRICE_LISTS = [
     ['لیست قیمت محصولات آشپزخانه لوکاتلی', 'prices-kitchen.html'],
     ['لیست قیمت محصولات فلزی لوکاتلی', 'prices-metal.html'],
+    ['لیست قیمت لوازم برقی لوکامیکس', 'prices-electric.html'],
   ];
-  const PRICE_VER = '150302';   // bump whenever a price PDF is replaced, so phones fetch the new file instead of a cached one
+  const PRICE_VER = '150310';   // bump whenever a price PDF is replaced, so phones fetch the new file instead of a cached one
   function priceBase(){
     const h = location.hostname || '';
     if (/^https?:$/.test(location.protocol) && !/claude|anthropic|usercontent|localhost|127\.0\.0\.1/.test(h)) return location.origin + '/';

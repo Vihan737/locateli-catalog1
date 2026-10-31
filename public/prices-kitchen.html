@@ -25,6 +25,7 @@ section h2 + .item{ border-top:0; }
 .opt{ display:flex; justify-content:space-between; gap:10px; align-items:baseline; margin-top:6px; font-size:13.5px; }
 .opt .d{ color:#3d4a57; }
 .opt .p{ font-weight:700; white-space:nowrap; direction:rtl; }
+.opt .p .na{ color:#a33; font-weight:700; }
 .opt .p small{ font-weight:400; color:var(--muted); margin-right:3px; }
 .notes{ background:#fff; border:1px dashed var(--line); border-radius:12px; padding:10px 14px; font-size:13px; line-height:1.9; color:#3d4a57; margin-bottom:14px; }
 .state{ text-align:center; padding:40px 10px; color:var(--muted); }
@@ -51,7 +52,7 @@ function render(d){
   out.innerHTML=groups.map(g=>'<section>'+(g.name?'<h2>'+esc(g.name)+'</h2>':'')+g.items.map(it=>
     '<div class="item">'+(it.img?'<img loading="lazy" src="img/'+esc(it.img)+'.jpg" alt="">':'<span class="noimg"></span>')+
     '<div class="info"><div class="name">'+esc(it.name)+'</div>'+(it.colors?'<div class="colors">رنگ‌بندی: '+esc(it.colors)+'</div>':'')+
-    it.opts.map(o=>'<div class="opt"><span class="d">'+esc(o.detail||'قیمت')+'</span><span class="p">'+(o.price?fa(o.price)+(o.unit?'<small>('+esc(o.unit)+')</small>':''):'تماس بگیرید')+'</span></div>').join('')+
+    it.opts.map(o=>'<div class="opt"><span class="d">'+esc(o.detail||'قیمت')+'</span><span class="p">'+(o.price===0?'<span class="na">ناموجود</span>':o.price?fa(o.price)+(o.unit?'<small>('+esc(o.unit)+')</small>':''):'تماس بگیرید')+'</span></div>').join('')+
     '</div></div>').join('')+'</section>').join('')+(notes.length?'<div class="notes">'+notes.map(n=>'*** '+esc(n)+' ***').join('<br>')+'</div>':'');
   if(d.source==='sheet') document.getElementById('meta').textContent='قیمت‌ها به‌روز هستند.';
 }
