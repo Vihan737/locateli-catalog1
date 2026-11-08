@@ -1996,6 +1996,41 @@
   html.phone .detail-sub{ margin-bottom:10px; }
   html.phone .detail-cta{ padding-top:14px; }
 </style>
+
+<style id="ux2-style">
+  /* 1) ordering is the main action on every product page */
+  .detail-cta{ flex-wrap:wrap; }
+  .detail-cta .cta-wa{ order:-1; flex:1 1 100% !important; min-height:50px; padding:0 16px !important;
+    background:#1f9d55 !important; color:#fff !important; border:none !important; border-radius:3px;
+    font-size:15px !important; font-weight:700; box-shadow:0 6px 16px -8px rgba(31,157,85,.7); }
+  .detail-cta .cta-wa svg{ color:#fff !important; width:20px; height:20px; }
+  .detail-cta .cta-wa .l-full{ display:inline !important; } .detail-cta .cta-wa .l-short{ display:none !important; }
+  .detail-cta .cta-wa:hover{ background:#198a49 !important; }
+  .detail-cta > :not(.cta-wa){ flex:1 1 0 !important; min-height:44px; padding-top:0 !important; padding-bottom:0 !important; }
+  /* 2) price shortcut under the product name */
+  .price-chip{ display:inline-flex; align-items:center; gap:5px; margin-inline-start:auto; padding:5px 11px; border-radius:20px;
+    font-size:12px; font-weight:700; letter-spacing:0; color:var(--navy-deep); text-decoration:none; white-space:nowrap; flex-shrink:0;
+    background:rgba(201,163,92,.16); border:1px solid rgba(201,163,92,.65); position:relative; }
+  .price-chip::after{ content:""; position:absolute; inset:-8px -4px; }
+  .price-chip svg{ width:15px; height:15px; color:#a0773a; flex-shrink:0; }
+  .price-chip:active{ transform:scale(.97); }
+  /* 3) quiet install bar instead of the half-screen sheet */
+  .app-bar{ position:fixed; left:12px; right:12px; bottom:calc(64px + var(--sab, 0px)); z-index:60; display:none;
+    align-items:center; gap:10px; padding:9px 10px 9px 8px; border-radius:12px; background:var(--navy-deep); color:var(--cream);
+    box-shadow:0 10px 30px -10px rgba(12,34,51,.6); font-family:'Vazirmatn'; }
+  .app-bar.show{ display:flex; animation:appbar-in .35s ease-out; }
+  @keyframes appbar-in{ from{ transform:translateY(16px); opacity:0; } to{ transform:none; opacity:1; } }
+  .app-bar img{ width:34px; height:34px; border-radius:8px; flex-shrink:0; }
+  .app-bar .t{ flex:1; font-size:12.5px; line-height:1.5; }
+  .app-bar .go{ border:none; border-radius:8px; padding:0 14px; min-height:40px; background:var(--gold); color:var(--navy-deep);
+    font-family:'Vazirmatn'; font-weight:700; font-size:13px; cursor:pointer; }
+  .app-bar .x{ border:none; background:transparent; color:var(--cream); opacity:.75; width:40px; height:40px; font-size:20px; cursor:pointer; }
+  /* 4) respect "reduce motion" */
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important;
+      transition-duration:.01ms !important; scroll-behavior:auto !important; }
+  }
+</style>
 </head>
 <body>
 
@@ -7847,14 +7882,14 @@
   }
   function orderWA(k){
     const v=pageVariant(k);
-    const vl=/opal|crescent|fruitset|cutlery/.test(k)?'طرح':'رنگ';
+    const vl=/lumimug/.test(k)?'مدل':(/opal|crescent|fruitset|cutlery|board/.test(k)?'طرح':'رنگ');
     const msg='سلام، وقت بخیر. از کاتالوگ لوکاتلی درباره‌ی «'+pageName(k)+'»'+(v?(' ('+vl+': '+v+')'):'')+' سؤال داشتم؛ لطفاً قیمت و شرایط خرید را بفرمایید.';
     openExternal('https://wa.me/'+ORDER_WA+'?text='+encodeURIComponent(msg), {title:'سفارش در واتساپ', name:pageName(k)+(v?(' — '+v):''), number:'09359496659', copyText:msg});
   }
   const BALE_ICON = '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2c-4.9 0-8.8 3.5-8.8 7.9 0 2.4 1.2 4.6 3.1 6l-.6 3.6 3.6-2c.9.2 1.8.3 2.7.3 4.9 0 8.8-3.5 8.8-7.9S16.9 3.2 12 3.2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.2 11.4l2.5 2.4 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function orderBale(k){
     const v=pageVariant(k);
-    const vl=/opal|crescent|fruitset|cutlery/.test(k)?'طرح':'رنگ';
+    const vl=/lumimug/.test(k)?'مدل':(/opal|crescent|fruitset|cutlery|board/.test(k)?'طرح':'رنگ');
     const msg='سلام، وقت بخیر. از کاتالوگ لوکاتلی درباره‌ی «'+pageName(k)+'»'+(v?(' ('+vl+': '+v+')'):'')+' سؤال داشتم؛ لطفاً قیمت و شرایط خرید را بفرمایید.';
     openBale(ORDER_WA, {title:'پیام در بله', name:pageName(k)+(v?(' — '+v):''), text:msg});
   }
@@ -8244,7 +8279,7 @@
                    (document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName));
       if (busy){ since = 0; return; }
       since += 1;
-      if (since >= 12){ shown = true; window.openApp(); }
+      if (since >= 20){ shown = true; if (window.__autoAppBar) window.__autoAppBar(); else window.openApp(); }
     }, 1000);
   })();
 
@@ -8476,5 +8511,42 @@ Object.assign(FRUIT_IMAGES, { classic: 'img/8891ecb00494.jpg', t6: 'img/3fe6e181
 Object.assign(CUTLERY_IMAGES, { d1: 'img/d922f5afb44f.jpg', d2: 'img/ecfe30aff167.jpg', d3: 'img/9a28ebc4220a.jpg' });
 </script>
 
+
+<script id="ux2-script">
+(function(){
+  var LIST = { kitchen:'prices-kitchen.html', metal:'prices-metal.html', electric:'prices-electric.html' };
+  var MAP = {
+    'detail-scale':'kitchen','detail-scale-crescent':'kitchen','detail-scale-kitchen':'kitchen',
+    'detail-glasscontainer':'kitchen','detail-glasscontainer-rect':'kitchen','detail-lumi':'kitchen','detail-lumimug':'kitchen',
+    'detail-boardr':'kitchen','detail-boards':'kitchen','detail-boardb':'kitchen',
+    'detail-peeler':'metal','detail-bowl':'metal','detail-bowl4':'metal','detail-bowlgr':'metal','detail-bowlhd':'metal',
+    'detail-colander':'metal','detail-strainer':'metal','detail-fruitset':'metal',
+    'detail-teamaker':'electric','detail-samovar':'electric','detail-grinder':'electric','detail-airfryer-w':'electric',
+    'detail-airfryer-d':'electric','detail-multicooker':'electric'
+  };
+  for (var i=1;i<=12;i++) MAP['detail-espresso'+(i===1?'':i)]='electric';
+  var ver = (typeof PRICE_VER!=='undefined') ? PRICE_VER : '';
+  var IC = '<svg viewBox="0 0 24 24" fill="none"><path d="M3.5 12.6V4.5a1 1 0 0 1 1-1h8.1l8 8a1 1 0 0 1 0 1.4l-7.7 7.7a1 1 0 0 1-1.4 0z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="8.2" cy="8.2" r="1.6" fill="currentColor"/></svg>';
+  Object.keys(MAP).forEach(function(k){
+    var pg = document.getElementById('page-'+k); if(!pg) return;
+    var eb = pg.querySelector('.detail-eyebrow'); if(!eb || pg.querySelector('.price-chip')) return;
+    var a = document.createElement('a'); a.className='price-chip'; a.target='_blank'; a.rel='noopener';
+    a.href = LIST[MAP[k]] + (ver ? ('?v='+ver) : ''); a.innerHTML = IC + '<span>مشاهده‌ی قیمت</span>';
+    eb.appendChild(a);
+  });
+
+  // quiet install bar: replaces the automatic half-screen sheet; the full sheet still opens from the bar or the cover button
+  var bar = document.createElement('div'); bar.className='app-bar'; bar.setAttribute('role','region'); bar.setAttribute('aria-label','نصب کاتالوگ');
+  bar.innerHTML = '<img src="icons/icon-192.png" alt=""><div class="t">کاتالوگ را روی صفحه‌ی اصلی گوشی نصب کنید</div>'
+    + '<button class="go" type="button">نصب</button><button class="x" type="button" aria-label="بستن">×</button>';
+  document.body.appendChild(bar);
+  bar.querySelector('.go').onclick = function(){ bar.classList.remove('show'); if(window.openApp) openApp(); };
+  bar.querySelector('.x').onclick = function(){ bar.classList.remove('show'); try{ localStorage.setItem('lc_app_later', String(Date.now())); }catch(e){} };
+  var realOpen = window.openApp;
+  window.__autoAppBar = function(){ bar.classList.add('show'); };
+  window.__appBar = bar; window.__realOpenApp = realOpen;
+  
+})();
+</script>
 </body>
 </html>
